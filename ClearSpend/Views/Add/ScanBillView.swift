@@ -24,6 +24,7 @@ struct ScanBillView: View {
     @State private var date: Date = .now
     @State private var selectedCategory: Category?
     @State private var selectedSubCategory: SubCategory?
+    @State private var suggestedCategoryName: String?
 
     var body: some View {
         NavigationStack {
@@ -35,6 +36,17 @@ struct ScanBillView: View {
                 }
 
                 Section("Category") {
+                    if let suggested = suggestedCategoryName {
+                        HStack {
+                            Image(systemName: "lightbulb.fill")
+                                .foregroundColor(.orange)
+                            Text("Suggested: \(suggested)")
+                                .font(DesignSystem.Typography.bodySmall)
+                                .foregroundColor(DesignSystem.Colors.textSecondary)
+                        }
+                        .padding(.vertical, 4)
+                    }
+                    
                     CategoryGridView(
                         categories: categories,
                         selectedCategory: $selectedCategory
@@ -90,6 +102,13 @@ struct ScanBillView: View {
                 self.amount = result.amount ?? 0
                 self.merchant = result.merchant ?? ""
                 self.date = result.date ?? .now
+                self.suggestedCategoryName = result.suggestedCategory
+                
+                // Auto-select suggested category if found
+                if let suggested = result.suggestedCategory {
+                    self.selectedCategory = self.categories.first { $0.name == suggested }
+                }
+                
                 self.isProcessing = false
             }
         }
