@@ -1,0 +1,45 @@
+# === Xcode ===
+DerivedData/
+build/
+*.xcuserstate
+*.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
+*.xcodeproj/project.xcworkspace/xcuserdata/
+
+# User-specific Xcode settings
+*.xcuserdatad
+*.xcuserstate
+
+# === Swift Package Manager ===
+.build/
+Packages/
+Package.resolved
+
+# === SwiftData / Core Data ===
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+
+# === macOS ===
+.DS_Store
+
+# === Logs ===
+*.log
+
+# === Playgrounds ===
+timeline.xctimeline
+playground.xcworkspace
+
+# === Fastlane (if added later) ===
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots
+fastlane/test_output
+
+# === Environment / Secrets (future-proofing) ===
+.env
+.env.*
+
+# === Temporary files ===
+*.swp
+*.tmp
