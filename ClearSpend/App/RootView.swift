@@ -5,6 +5,7 @@
 //  Created by Arvind Pandey on 02/01/26.
 //
 
+
 import SwiftUI
 
 struct RootView: View {
@@ -13,6 +14,8 @@ struct RootView: View {
     @State private var showAddIncome = false
     @State private var showAddExpense = false
     @State private var showScanBill = false
+    private let fabBottomOffset: CGFloat = 72
+    private let fabMenuSpacing: CGFloat = 12
 
     var body: some View {
         ZStack {
@@ -35,7 +38,7 @@ struct RootView: View {
             }
             .tint(DesignSystem.Colors.primary)
 
-            // Dimmed background when menu is open
+            // Dimmed background
             if showMenu {
                 Color.black.opacity(0.3)
                     .ignoresSafeArea()
@@ -46,27 +49,9 @@ struct RootView: View {
                     }
             }
 
-            // FAB + Menu
-            VStack {
-                Spacer()
-                HStack {
-                    Spacer()
-
-                    VStack(spacing: DesignSystem.Spacing.md) {
-
-                        if showMenu {
-                            fabMenu
-                                .transition(.move(edge: .bottom).combined(with: .opacity))
-                        }
-
-                        fabButton
-                    }
-                    .padding(.trailing, DesignSystem.Spacing.lg)
-                    .padding(.bottom, DesignSystem.Spacing.xl) // Safe area from tab bar
-                }
-            }
+            // MARK: - FAB & Menu (FIXED)
+            fabLayer
         }
-        .animation(.spring(response: 0.35, dampingFraction: 0.8), value: showMenu)
         .sheet(isPresented: $showAddIncome) {
             AddIncomeView()
         }
@@ -77,7 +62,30 @@ struct RootView: View {
             ScanBillView()
         }
     }
-    
+
+    // MARK: - FAB Layer (Full-Screen Anchor)
+
+    private var fabLayer: some View {
+        ZStack(alignment: .bottomTrailing) {
+
+            if showMenu {
+                fabMenu
+                    .padding(.trailing, DesignSystem.Spacing.lg)
+                    .padding(.bottom, DesignSystem.Spacing.xl + fabBottomOffset + 56 + fabMenuSpacing)
+            }
+
+            fabButton
+                .padding(.trailing, DesignSystem.Spacing.lg)
+                .padding(.bottom, DesignSystem.Spacing.xl + fabBottomOffset)
+        }
+        // 🔑 THIS IS THE CRITICAL LINE
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
+        .ignoresSafeArea(edges: .bottom)
+        .animation(.spring(response: 0.35, dampingFraction: 0.8), value: showMenu)
+    }
+
+    // MARK: - FAB Button (Never Moves)
+
     private var fabButton: some View {
         Button {
             withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
@@ -88,8 +96,13 @@ struct RootView: View {
                 Circle()
                     .fill(DesignSystem.Colors.primary)
                     .frame(width: 56, height: 56)
-                    .shadow(color: DesignSystem.Shadows.large.color, radius: DesignSystem.Shadows.large.radius, x: DesignSystem.Shadows.large.x, y: DesignSystem.Shadows.large.y)
-                
+                    .shadow(
+                        color: DesignSystem.Shadows.large.color,
+                        radius: DesignSystem.Shadows.large.radius,
+                        x: DesignSystem.Shadows.large.x,
+                        y: DesignSystem.Shadows.large.y
+                    )
+
                 Image(systemName: "plus")
                     .font(DesignSystem.Typography.headlineSmall)
                     .fontWeight(.semibold)
@@ -99,7 +112,9 @@ struct RootView: View {
         }
         .scaleEffect(showMenu ? 1.1 : 1.0)
     }
-    
+
+    // MARK: - FAB Menu (Floats, No Layout Impact)
+
     private var fabMenu: some View {
         VStack(alignment: .trailing, spacing: DesignSystem.Spacing.sm) {
 
@@ -131,7 +146,9 @@ struct RootView: View {
             }
         }
     }
-    
+
+    // MARK: - Menu Button
+
     private func fabMenuButton(
         title: String,
         icon: String,
@@ -149,7 +166,7 @@ struct RootView: View {
                     Circle()
                         .fill(color)
                         .frame(width: 32, height: 32)
-                    
+
                     Image(systemName: icon)
                         .font(DesignSystem.Typography.bodySmall)
                         .fontWeight(.semibold)
@@ -161,9 +178,13 @@ struct RootView: View {
             .background(
                 RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.large)
                     .fill(DesignSystem.Colors.cardBackground)
-                    .shadow(color: DesignSystem.Shadows.medium.color, radius: DesignSystem.Shadows.medium.radius, x: DesignSystem.Shadows.medium.x, y: DesignSystem.Shadows.medium.y)
+                    .shadow(
+                        color: DesignSystem.Shadows.medium.color,
+                        radius: DesignSystem.Shadows.medium.radius,
+                        x: DesignSystem.Shadows.medium.x,
+                        y: DesignSystem.Shadows.medium.y
+                    )
             )
         }
-        .transition(.move(edge: .trailing).combined(with: .opacity))
     }
 }
