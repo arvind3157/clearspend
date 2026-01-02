@@ -5,6 +5,13 @@
 //  Created by Arvind Pandey on 02/01/26.
 //
 
+//
+//  AnalyticsView.swift
+//  ClearSpend
+//
+//  Created by Arvind Pandey on 02/01/26.
+//
+
 import SwiftUI
 import SwiftData
 import Charts
@@ -16,7 +23,11 @@ struct AnalyticsView: View {
 
     @StateObject
     private var viewModel = AnalyticsViewModel()
-    
+
+    @State private var showAddExpense = false
+
+    // MARK: - Empty State
+
     private var emptyState: some View {
         VStack(spacing: DesignSystem.Spacing.lg) {
             Image(systemName: "chart.pie")
@@ -27,15 +38,15 @@ struct AnalyticsView: View {
                 Text("No spending data yet")
                     .font(DesignSystem.Typography.headlineSmall)
                     .foregroundColor(DesignSystem.Colors.textSecondary)
-                
+
                 Text("Start adding expenses to see your spending analytics")
                     .font(DesignSystem.Typography.bodyMedium)
                     .foregroundColor(DesignSystem.Colors.textTertiary)
                     .multilineTextAlignment(.center)
             }
-            
+
             Button {
-                // TODO: Navigate to add expense
+                showAddExpense = true
             } label: {
                 Text("Add Your First Expense")
                     .font(DesignSystem.Typography.labelLarge)
@@ -55,19 +66,23 @@ struct AnalyticsView: View {
         )
         .padding(.top, DesignSystem.Spacing.xl)
     }
-    
+
+    // MARK: - Category Legend
+
     private var categoryLegend: some View {
         VStack(alignment: .leading, spacing: DesignSystem.Spacing.lg) {
             HStack {
                 Text("Spending by Category")
                     .font(DesignSystem.Typography.headlineSmall)
                     .foregroundColor(DesignSystem.Colors.textPrimary)
-                
+
                 Spacer()
-                
+
                 Text(
                     viewModel.totalSpend,
-                    format: .currency(code: Locale.current.currency?.identifier ?? "USD")
+                    format: .currency(
+                        code: Locale.current.currency?.identifier ?? "USD"
+                    )
                 )
                 .font(DesignSystem.Typography.titleMedium)
                 .foregroundColor(DesignSystem.Colors.textSecondary)
@@ -81,7 +96,10 @@ struct AnalyticsView: View {
                             ledger: viewModel.selectedLedger
                         )
                     } label: {
-                        CategoryLegendRow(item: item, totalAmount: viewModel.totalSpend)
+                        CategoryLegendRow(
+                            item: item,
+                            totalAmount: viewModel.totalSpend
+                        )
                     }
                 }
             }
@@ -90,42 +108,48 @@ struct AnalyticsView: View {
         .cardStyle()
     }
 
+    // MARK: - Body
+
     var body: some View {
         NavigationStack {
             ScrollView {
                 LazyVStack(spacing: DesignSystem.Spacing.xl) {
+
                     if viewModel.totalSpend == 0 {
                         emptyState
                     } else {
-                        // Header with total spending
+
+                        // Header
                         VStack(spacing: DesignSystem.Spacing.md) {
                             Text("Total Spending")
                                 .font(DesignSystem.Typography.titleMedium)
                                 .foregroundColor(DesignSystem.Colors.textSecondary)
-                            
+
                             Text(
                                 viewModel.totalSpend,
-                                format: .currency(code: Locale.current.currency?.identifier ?? "USD")
+                                format: .currency(
+                                    code: Locale.current.currency?.identifier ?? "USD"
+                                )
                             )
                             .font(DesignSystem.Typography.displayMedium)
                             .fontWeight(.bold)
                             .foregroundColor(DesignSystem.Colors.textPrimary)
                         }
                         .padding(.top, DesignSystem.Spacing.lg)
-                        
-                        // Chart Section
+
+                        // Chart + Legend
                         VStack(spacing: DesignSystem.Spacing.lg) {
                             SpendPieChartView(
                                 categorySpends: viewModel.categorySpends
                             )
                             .padding(DesignSystem.Spacing.lg)
                             .cardStyle()
-                            
+
                             categoryLegend
                         }
                     }
-                    
-                    // Add bottom padding
+
+                    // Bottom spacing for FAB
                     Color.clear
                         .frame(height: DesignSystem.Spacing.lg)
                 }
@@ -137,13 +161,16 @@ struct AnalyticsView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
-                        // TODO: Add export functionality
+                        // TODO: Export analytics
                     } label: {
                         Image(systemName: "square.and.arrow.up")
                             .foregroundColor(DesignSystem.Colors.primary)
                     }
                 }
             }
+        }
+        .sheet(isPresented: $showAddExpense) {
+            AddExpenseView()
         }
         .onAppear {
             viewModel.load(context: modelContext)
