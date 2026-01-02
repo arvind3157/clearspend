@@ -24,41 +24,51 @@ struct AddExpenseView: View {
 
     var body: some View {
         NavigationStack {
-            Form {
+            List {
+
                 Section("Amount") {
                     TextField("Amount", value: $amount, format: .number)
                         .keyboardType(.decimalPad)
                 }
 
                 Section("Category") {
-                    CategoryGridView(
-                        categories: categories,
-                        selectedCategory: $selectedCategory
-                    )
-                    .onChange(of: selectedCategory) {
-                        selectedSubCategory = nil
+                    NavigationLink {
+                        CategoryPickerView(
+                            categories: categories,
+                            selectedCategory: $selectedCategory,
+                            selectedSubCategory: $selectedSubCategory
+                        )
+                    } label: {
+                        Text(selectedCategory?.name ?? "Select Category")
                     }
+                }
 
-                    if let subs = selectedCategory?.subCategories {
-                        Picker("Sub Category", selection: $selectedSubCategory) {
-                            Text("Select").tag(SubCategory?.none)
-                            ForEach(subs) { sub in
-                                Text(sub.name).tag(SubCategory?.some(sub))
-                            }
+                Section("Sub Category") {
+                    if let category = selectedCategory {
+                        NavigationLink {
+                            SubCategoryPickerView(
+                                category: category,
+                                selectedSubCategory: $selectedSubCategory
+                            )
+                        } label: {
+                            Text(selectedSubCategory?.name ?? "Select Sub Category")
                         }
+                    } else {
+                        Text("Select category first")
+                            .foregroundStyle(.secondary)
                     }
                 }
 
                 Section("Details") {
                     DatePicker("Date", selection: $date, displayedComponents: .date)
-                    TextField("Note (optional)", text: $note)
+                    TextField("Note", text: $note)
                 }
             }
             .navigationTitle("Add Expense")
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
-                        saveExpense()
+                        save()
                         dismiss()
                     }
                     .disabled(amount <= 0 || selectedSubCategory == nil)
@@ -71,10 +81,8 @@ struct AddExpenseView: View {
         }
     }
 
-    private func saveExpense() {
-        let ledger = MonthLedgerManager.currentMonthLedger(
-            context: modelContext
-        )
+    private func save() {
+        let ledger = MonthLedgerManager.currentMonthLedger(context: modelContext)
 
         let expense = Expense(
             amount: amount,

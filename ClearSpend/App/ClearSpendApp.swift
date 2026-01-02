@@ -11,16 +11,25 @@ import SwiftData
 @main
 struct ClearSpendApp: App {
 
-    var body: some Scene {
-        WindowGroup {
-            RootView()
-        }
-        .modelContainer(for: [
-            MonthLedger.self,
+    var sharedModelContainer: ModelContainer = {
+        let container = try! ModelContainer(
+            for: MonthLedger.self,
             Income.self,
             Expense.self,
             Category.self,
             SubCategory.self
-        ])
+        )
+
+        let context = ModelContext(container)
+        CategorySeeder.seedIfNeeded(context: context)
+
+        return container
+    }()
+
+    var body: some Scene {
+        WindowGroup {
+            RootView()
+        }
+        .modelContainer(sharedModelContainer)
     }
 }

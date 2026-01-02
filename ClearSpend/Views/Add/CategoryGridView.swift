@@ -19,13 +19,15 @@ struct CategoryGridView: View {
     var body: some View {
         LazyVGrid(columns: columns, spacing: 16) {
             ForEach(categories) { category in
-                CategoryCell(
-                    category: category,
-                    isSelected: category.id == selectedCategory?.id
-                )
-                .onTapGesture {
+                Button {
                     selectedCategory = category
+                } label: {
+                    CategoryCell(
+                        category: category,
+                        isSelected: category.id == selectedCategory?.id
+                    )
                 }
+                .buttonStyle(.plain)
             }
         }
         .padding(.vertical, 8)
