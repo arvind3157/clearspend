@@ -20,7 +20,7 @@ struct RootView: View {
             TabView {
                 DashboardView()
                     .tabItem {
-                        Label("Dashboard", systemImage: "house")
+                        Label("Dashboard", systemImage: "house.fill")
                     }
 
                 AnalyticsView()
@@ -33,13 +33,14 @@ struct RootView: View {
                         Label("Settings", systemImage: "gear")
                     }
             }
+            .tint(DesignSystem.Colors.primary)
 
             // Dimmed background when menu is open
             if showMenu {
-                Color.black.opacity(0.15)
+                Color.black.opacity(0.3)
                     .ignoresSafeArea()
                     .onTapGesture {
-                        withAnimation {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                             showMenu = false
                         }
                     }
@@ -51,7 +52,7 @@ struct RootView: View {
                 HStack {
                     Spacer()
 
-                    VStack(spacing: 12) {
+                    VStack(spacing: DesignSystem.Spacing.md) {
 
                         if showMenu {
                             fabMenu
@@ -60,8 +61,8 @@ struct RootView: View {
 
                         fabButton
                     }
-                    .padding(.trailing, 20)
-                    .padding(.bottom, 32) // 👈 moved up from tab bar
+                    .padding(.trailing, DesignSystem.Spacing.lg)
+                    .padding(.bottom, DesignSystem.Spacing.xl) // Safe area from tab bar
                 }
             }
         }
@@ -79,29 +80,33 @@ struct RootView: View {
     
     private var fabButton: some View {
         Button {
-            withAnimation {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                 showMenu.toggle()
             }
         } label: {
-            Image(systemName: "plus")
-                .font(.title2.bold())
-                .foregroundStyle(.white)
-                .rotationEffect(.degrees(showMenu ? 45 : 0))
-                .frame(width: 56, height: 56)
-                .background(
-                    Circle()
-                        .fill(Color.accentColor)
-                )
-                .shadow(radius: 6)
+            ZStack {
+                Circle()
+                    .fill(DesignSystem.Colors.primary)
+                    .frame(width: 56, height: 56)
+                    .shadow(color: DesignSystem.Shadows.large.color, radius: DesignSystem.Shadows.large.radius, x: DesignSystem.Shadows.large.x, y: DesignSystem.Shadows.large.y)
+                
+                Image(systemName: "plus")
+                    .font(DesignSystem.Typography.headlineSmall)
+                    .fontWeight(.semibold)
+                    .foregroundColor(DesignSystem.Colors.textOnPrimary)
+                    .rotationEffect(.degrees(showMenu ? 45 : 0))
+            }
         }
+        .scaleEffect(showMenu ? 1.1 : 1.0)
     }
     
     private var fabMenu: some View {
-        VStack(alignment: .trailing, spacing: 12) {
+        VStack(alignment: .trailing, spacing: DesignSystem.Spacing.sm) {
 
             fabMenuButton(
                 title: "Scan Bill",
-                icon: "camera.fill"
+                icon: "camera.fill",
+                color: DesignSystem.Colors.info
             ) {
                 showScanBill = true
                 showMenu = false
@@ -109,7 +114,8 @@ struct RootView: View {
 
             fabMenuButton(
                 title: "Add Expense",
-                icon: "arrow.up.circle.fill"
+                icon: "arrow.up.circle.fill",
+                color: DesignSystem.Colors.danger
             ) {
                 showAddExpense = true
                 showMenu = false
@@ -117,7 +123,8 @@ struct RootView: View {
 
             fabMenuButton(
                 title: "Add Income",
-                icon: "arrow.down.circle.fill"
+                icon: "arrow.down.circle.fill",
+                color: DesignSystem.Colors.success
             ) {
                 showAddIncome = true
                 showMenu = false
@@ -128,24 +135,35 @@ struct RootView: View {
     private func fabMenuButton(
         title: String,
         icon: String,
+        color: Color,
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
-            HStack(spacing: 8) {
+            HStack(spacing: DesignSystem.Spacing.md) {
                 Text(title)
-                    .font(.subheadline)
-                    .foregroundStyle(.primary)
+                    .font(DesignSystem.Typography.bodyMedium)
+                    .fontWeight(.medium)
+                    .foregroundColor(DesignSystem.Colors.textPrimary)
 
-                Image(systemName: icon)
-                    .foregroundStyle(.primary)
+                ZStack {
+                    Circle()
+                        .fill(color)
+                        .frame(width: 32, height: 32)
+                    
+                    Image(systemName: icon)
+                        .font(DesignSystem.Typography.bodySmall)
+                        .fontWeight(.semibold)
+                        .foregroundColor(DesignSystem.Colors.textOnPrimary)
+                }
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 10)
+            .padding(.horizontal, DesignSystem.Spacing.lg)
+            .padding(.vertical, DesignSystem.Spacing.md)
             .background(
-                RoundedRectangle(cornerRadius: 10)
-                    .fill(Color(.systemBackground))
+                RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.large)
+                    .fill(DesignSystem.Colors.cardBackground)
+                    .shadow(color: DesignSystem.Shadows.medium.color, radius: DesignSystem.Shadows.medium.radius, x: DesignSystem.Shadows.medium.x, y: DesignSystem.Shadows.medium.y)
             )
-            .shadow(radius: 2)
         }
+        .transition(.move(edge: .trailing).combined(with: .opacity))
     }
 }

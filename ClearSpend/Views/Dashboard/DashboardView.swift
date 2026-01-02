@@ -17,59 +17,75 @@ struct DashboardView: View {
     private var viewModel = DashboardViewModel()
     
     private var recentExpensesSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-
-            Text("Recent Spends")
-                .font(.headline)
+        VStack(alignment: .leading, spacing: DesignSystem.Spacing.lg) {
+            HStack {
+                Text("Recent Spends")
+                    .font(DesignSystem.Typography.headlineSmall)
+                    .foregroundColor(DesignSystem.Colors.textPrimary)
+                
+                Spacer()
+                
+                NavigationLink {
+                    // TODO: Add full expenses list view
+                    Text("All Expenses")
+                } label: {
+                    Text("See All")
+                        .font(DesignSystem.Typography.titleMedium)
+                        .foregroundColor(DesignSystem.Colors.primary)
+                }
+            }
 
             if viewModel.recentExpenses.isEmpty {
-                Text("No expenses yet")
-                    .foregroundStyle(.secondary)
+                VStack(spacing: DesignSystem.Spacing.md) {
+                    Image(systemName: "wallet.pass")
+                        .font(.system(size: 48))
+                        .foregroundColor(DesignSystem.Colors.textTertiary)
+                    
+                    Text("No expenses yet")
+                        .font(DesignSystem.Typography.bodyMedium)
+                        .foregroundColor(DesignSystem.Colors.textSecondary)
+                    
+                    Text("Tap the + button to add your first expense")
+                        .font(DesignSystem.Typography.bodySmall)
+                        .foregroundColor(DesignSystem.Colors.textTertiary)
+                        .multilineTextAlignment(.center)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(DesignSystem.Spacing.xl)
+                .background(
+                    RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.medium)
+                        .fill(DesignSystem.Colors.surfaceVariant)
+                )
             } else {
-                ForEach(viewModel.recentExpenses) { expense in
-                    HStack {
-                        VStack(alignment: .leading) {
-                            Text(expense.subCategory?.name ?? "Unknown")
-                                .font(.subheadline)
-
-                            Text(expense.date, style: .date)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-
-                        Spacer()
-
-                        Text(
-                            expense.amount,
-                            format: .currency(code: Locale.current.currency?.identifier ?? "USD")
-                        )
-                        .foregroundStyle(.red)
+                LazyVStack(spacing: DesignSystem.Spacing.sm) {
+                    ForEach(viewModel.recentExpenses) { expense in
+                        ExpenseRow(expense: expense)
                     }
-                    .padding(.vertical, 6)
                 }
             }
         }
     }
     
     private var summaryCards: some View {
-        HStack(spacing: 12) {
-
-            SummaryCard(
-                title: "Income",
-                amount: viewModel.totalIncome,
-                color: .green
-            )
-
-            SummaryCard(
-                title: "Spent",
-                amount: viewModel.totalExpenses,
-                color: .red
-            )
-
+        VStack(spacing: DesignSystem.Spacing.md) {
+            HStack(spacing: DesignSystem.Spacing.md) {
+                SummaryCard(
+                    title: "Income",
+                    amount: viewModel.totalIncome,
+                    color: DesignSystem.Colors.success
+                )
+                
+                SummaryCard(
+                    title: "Spent",
+                    amount: viewModel.totalExpenses,
+                    color: DesignSystem.Colors.danger
+                )
+            }
+            
             SummaryCard(
                 title: "Savings",
                 amount: viewModel.savings,
-                color: viewModel.savings >= 0 ? .blue : .orange
+                color: viewModel.savings >= 0 ? DesignSystem.Colors.info : DesignSystem.Colors.warning
             )
         }
     }
@@ -87,22 +103,45 @@ struct DashboardView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 20) {
-
-                    if let ledger = viewModel.selectedLedger {
-                        Text(monthTitle(for: ledger))
-                            .font(.title2)
-                            .bold()
+                LazyVStack(spacing: DesignSystem.Spacing.xl) {
+                    // Header Section
+                    VStack(spacing: DesignSystem.Spacing.md) {
+                        if let ledger = viewModel.selectedLedger {
+                            Text(monthTitle(for: ledger))
+                                .font(DesignSystem.Typography.displaySmall)
+                                .fontWeight(.bold)
+                                .foregroundColor(DesignSystem.Colors.textPrimary)
+                            
+                            Text("Financial Overview")
+                                .font(DesignSystem.Typography.bodyMedium)
+                                .foregroundColor(DesignSystem.Colors.textSecondary)
+                        }
                     }
+                    .padding(.top, DesignSystem.Spacing.lg)
 
                     summaryCards
 
                     recentExpensesSection
-
+                    
+                    // Add some bottom padding for better scrolling
+                    Color.clear
+                        .frame(height: DesignSystem.Spacing.lg)
                 }
-                .padding()
+                .padding(.horizontal, DesignSystem.Spacing.lg)
             }
+            .background(DesignSystem.Colors.background)
             .navigationTitle("ClearSpend")
+            .navigationBarTitleDisplayMode(.large)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button {
+                        // TODO: Add search functionality
+                    } label: {
+                        Image(systemName: "magnifyingglass")
+                            .foregroundColor(DesignSystem.Colors.primary)
+                    }
+                }
+            }
         }
         .onAppear {
             viewModel.load(context: modelContext)

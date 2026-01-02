@@ -24,60 +24,227 @@ struct AddExpenseView: View {
 
     var body: some View {
         NavigationStack {
-            List {
-
-                Section("Amount") {
-                    TextField("Amount", value: $amount, format: .number)
-                        .keyboardType(.decimalPad)
-                }
-
-                Section("Category") {
-                    NavigationLink {
-                        CategoryPickerView(
-                            categories: categories,
-                            selectedCategory: $selectedCategory,
-                            selectedSubCategory: $selectedSubCategory
+            ScrollView {
+                LazyVStack(spacing: DesignSystem.Spacing.xl) {
+                    // Amount Section
+                    VStack(alignment: .leading, spacing: DesignSystem.Spacing.md) {
+                        Text("Amount")
+                            .font(DesignSystem.Typography.headlineSmall)
+                            .foregroundColor(DesignSystem.Colors.textPrimary)
+                        
+                        HStack {
+                            Text(Locale.current.currencySymbol ?? "$")
+                                .font(DesignSystem.Typography.displayMedium)
+                                .foregroundColor(DesignSystem.Colors.primary)
+                            
+                            TextField("0.00", value: $amount, format: .currency(code: Locale.current.currency?.identifier ?? "USD"))
+                                .font(DesignSystem.Typography.displayMedium)
+                                .fontWeight(.semibold)
+                                .keyboardType(.decimalPad)
+                                .multilineTextAlignment(.leading)
+                        }
+                        .padding(DesignSystem.Spacing.lg)
+                        .background(
+                            RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.medium)
+                                .fill(DesignSystem.Colors.surfaceVariant)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.medium)
+                                        .stroke(DesignSystem.Colors.primary.opacity(0.3), lineWidth: 2)
+                                )
                         )
-                    } label: {
-                        Text(selectedCategory?.name ?? "Select Category")
                     }
-                }
-
-                Section("Sub Category") {
-                    if let category = selectedCategory {
+                    
+                    // Category Section
+                    VStack(alignment: .leading, spacing: DesignSystem.Spacing.md) {
+                        Text("Category")
+                            .font(DesignSystem.Typography.headlineSmall)
+                            .foregroundColor(DesignSystem.Colors.textPrimary)
+                        
                         NavigationLink {
-                            SubCategoryPickerView(
-                                category: category,
+                            CategoryPickerView(
+                                categories: categories,
+                                selectedCategory: $selectedCategory,
                                 selectedSubCategory: $selectedSubCategory
                             )
                         } label: {
-                            Text(selectedSubCategory?.name ?? "Select Sub Category")
+                            HStack {
+                                Image(systemName: selectedCategory?.icon ?? "folder")
+                                    .font(DesignSystem.Typography.titleMedium)
+                                    .foregroundColor(colorForCategory(selectedCategory?.name ?? ""))
+                                
+                                VStack(alignment: .leading, spacing: DesignSystem.Spacing.xs) {
+                                    Text(selectedCategory?.name ?? "Select Category")
+                                        .font(DesignSystem.Typography.bodyMedium)
+                                        .foregroundColor(selectedCategory != nil ? DesignSystem.Colors.textPrimary : DesignSystem.Colors.textTertiary)
+                                    
+                                    if selectedCategory != nil {
+                                        Text("Tap to change")
+                                            .font(DesignSystem.Typography.bodySmall)
+                                            .foregroundColor(DesignSystem.Colors.textTertiary)
+                                    }
+                                }
+                                
+                                Spacer()
+                                
+                                Image(systemName: "chevron.right")
+                                    .font(DesignSystem.Typography.titleSmall)
+                                    .foregroundColor(DesignSystem.Colors.textTertiary)
+                            }
+                            .padding(DesignSystem.Spacing.lg)
+                            .background(
+                                RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.medium)
+                                    .fill(DesignSystem.Colors.surfaceVariant)
+                            )
                         }
-                    } else {
-                        Text("Select category first")
-                            .foregroundStyle(.secondary)
+                    }
+                    
+                    // Sub Category Section
+                    VStack(alignment: .leading, spacing: DesignSystem.Spacing.md) {
+                        Text("Sub Category")
+                            .font(DesignSystem.Typography.headlineSmall)
+                            .foregroundColor(DesignSystem.Colors.textPrimary)
+                        
+                        if let category = selectedCategory {
+                            NavigationLink {
+                                SubCategoryPickerView(
+                                    category: category,
+                                    selectedSubCategory: $selectedSubCategory
+                                )
+                            } label: {
+                                HStack {
+                                    Image(systemName: "tag")
+                                        .font(DesignSystem.Typography.titleMedium)
+                                        .foregroundColor(DesignSystem.Colors.primary)
+                                    
+                                    VStack(alignment: .leading, spacing: DesignSystem.Spacing.xs) {
+                                        Text(selectedSubCategory?.name ?? "Select Sub Category")
+                                            .font(DesignSystem.Typography.bodyMedium)
+                                            .foregroundColor(selectedSubCategory != nil ? DesignSystem.Colors.textPrimary : DesignSystem.Colors.textTertiary)
+                                        
+                                        if selectedSubCategory != nil {
+                                            Text("Tap to change")
+                                                .font(DesignSystem.Typography.bodySmall)
+                                                .foregroundColor(DesignSystem.Colors.textTertiary)
+                                        }
+                                    }
+                                    
+                                    Spacer()
+                                    
+                                    Image(systemName: "chevron.right")
+                                        .font(DesignSystem.Typography.titleSmall)
+                                        .foregroundColor(DesignSystem.Colors.textTertiary)
+                                }
+                                .padding(DesignSystem.Spacing.lg)
+                                .background(
+                                    RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.medium)
+                                        .fill(DesignSystem.Colors.surfaceVariant)
+                                )
+                            }
+                        } else {
+                            HStack {
+                                Image(systemName: "tag")
+                                    .font(DesignSystem.Typography.titleMedium)
+                                    .foregroundColor(DesignSystem.Colors.textTertiary)
+                                
+                                Text("Select category first")
+                                    .font(DesignSystem.Typography.bodyMedium)
+                                    .foregroundColor(DesignSystem.Colors.textTertiary)
+                                
+                                Spacer()
+                            }
+                            .padding(DesignSystem.Spacing.lg)
+                            .background(
+                                RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.medium)
+                                    .fill(DesignSystem.Colors.gray100)
+                            )
+                        }
+                    }
+                    
+                    // Details Section
+                    VStack(alignment: .leading, spacing: DesignSystem.Spacing.md) {
+                        Text("Details")
+                            .font(DesignSystem.Typography.headlineSmall)
+                            .foregroundColor(DesignSystem.Colors.textPrimary)
+                        
+                        VStack(spacing: DesignSystem.Spacing.md) {
+                            VStack(alignment: .leading, spacing: DesignSystem.Spacing.sm) {
+                                Text("Date")
+                                    .font(DesignSystem.Typography.titleMedium)
+                                    .foregroundColor(DesignSystem.Colors.textSecondary)
+                                
+                                DatePicker("", selection: $date, displayedComponents: .date)
+                                    .datePickerStyle(.graphical)
+                                    .padding(DesignSystem.Spacing.md)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.medium)
+                                            .fill(DesignSystem.Colors.surfaceVariant)
+                                    )
+                            }
+                            
+                            VStack(alignment: .leading, spacing: DesignSystem.Spacing.sm) {
+                                Text("Note (Optional)")
+                                    .font(DesignSystem.Typography.titleMedium)
+                                    .foregroundColor(DesignSystem.Colors.textSecondary)
+                                
+                                TextField("Add a note...", text: $note, axis: .vertical)
+                                    .font(DesignSystem.Typography.bodyMedium)
+                                    .padding(DesignSystem.Spacing.md)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.medium)
+                                            .fill(DesignSystem.Colors.surfaceVariant)
+                                    )
+                                    .lineLimit(3...6)
+                            }
+                        }
                     }
                 }
-
-                Section("Details") {
-                    DatePicker("Date", selection: $date, displayedComponents: .date)
-                    TextField("Note", text: $note)
-                }
+                .padding(DesignSystem.Spacing.lg)
             }
+            .background(DesignSystem.Colors.background)
             .navigationTitle("Add Expense")
+            .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
                         save()
                         dismiss()
                     }
+                    .font(DesignSystem.Typography.labelLarge)
+                    .foregroundColor(amount > 0 && selectedSubCategory != nil ? DesignSystem.Colors.primary : DesignSystem.Colors.textTertiary)
                     .disabled(amount <= 0 || selectedSubCategory == nil)
                 }
 
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
+                    Button("Cancel") { 
+                        dismiss() 
+                    }
+                    .font(DesignSystem.Typography.labelLarge)
+                    .foregroundColor(DesignSystem.Colors.primary)
                 }
             }
+        }
+    }
+    
+    private func colorForCategory(_ categoryName: String) -> Color {
+        switch categoryName.lowercased() {
+        case "food", "restaurant", "dining":
+            return DesignSystem.Colors.warning
+        case "transport", "travel", "uber", "taxi":
+            return DesignSystem.Colors.info
+        case "shopping", "retail":
+            return DesignSystem.Colors.primary
+        case "entertainment", "movies", "games":
+            return DesignSystem.Colors.success
+        case "health", "medical", "pharmacy":
+            return DesignSystem.Colors.danger
+        case "education", "books", "learning":
+            return DesignSystem.Colors.primaryDark
+        case "bills", "utilities":
+            return DesignSystem.Colors.warning
+        case "groceries":
+            return DesignSystem.Colors.success
+        default:
+            return DesignSystem.Colors.gray600
         }
     }
 
