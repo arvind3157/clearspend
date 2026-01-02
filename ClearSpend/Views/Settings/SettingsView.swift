@@ -12,11 +12,15 @@ struct SettingsView: View {
 
     @Environment(\.modelContext)
     private var modelContext
-
+    
     @Query(sort: \Category.name)
     private var categories: [Category]
-
+    
     @State private var showResetAlert = false
+    @State private var showProfileEdit = false
+    @State private var userProfile: UserProfile?
+    
+    @ObservedObject private var authService = AuthenticationService.shared
     
     private func resetAllData() {
         do {
@@ -44,22 +48,53 @@ struct SettingsView: View {
                     VStack(spacing: DesignSystem.Spacing.lg) {
                         // Profile Header
                         HStack(spacing: DesignSystem.Spacing.md) {
-                            ZStack {
-                                Circle()
-                                    .fill(DesignSystem.Colors.primaryLight.opacity(0.2))
-                                    .frame(width: 60, height: 60)
-                                
-                                Image(systemName: "person.fill")
-                                    .font(DesignSystem.Typography.headlineSmall)
-                                    .foregroundColor(DesignSystem.Colors.primary)
+                            Button {
+                                showProfileEdit = true
+                            } label: {
+                                ZStack {
+                                    Circle()
+                                        .fill(DesignSystem.Colors.primaryLight.opacity(0.2))
+                                        .frame(width: 60, height: 60)
+                                    
+                                    if let imageData = userProfile?.profileImageData,
+                                       let image = UIImage(data: imageData) {
+                                        Image(uiImage: image)
+                                            .resizable()
+                                            .aspectRatio(contentMode: .fill)
+                                            .frame(width: 60, height: 60)
+                                            .clipShape(Circle())
+                                    } else {
+                                        Image(systemName: "person.fill")
+                                            .font(DesignSystem.Typography.headlineSmall)
+                                            .foregroundColor(DesignSystem.Colors.primary)
+                                    }
+                                    
+                                    // Edit indicator
+                                    VStack {
+                                        HStack {
+                                            Spacer()
+                                            ZStack {
+                                                Circle()
+                                                    .fill(DesignSystem.Colors.primary)
+                                                    .frame(width: 20, height: 20)
+                                                
+                                                Image(systemName: "pencil")
+                                                    .font(.system(size: 10))
+                                                    .foregroundColor(.white)
+                                            }
+                                            .offset(x: 8, y: -8)
+                                        }
+                                        Spacer()
+                                    }
+                                }
                             }
                             
                             VStack(alignment: .leading, spacing: DesignSystem.Spacing.xs) {
-                                Text("ClearSpend User")
+                                Text(userProfile?.name ?? "ClearSpend User")
                                     .font(DesignSystem.Typography.headlineSmall)
                                     .foregroundColor(DesignSystem.Colors.textPrimary)
                                 
-                                Text("Track your finances with ease")
+                                Text("Tap to edit profile")
                                     .font(DesignSystem.Typography.bodySmall)
                                     .foregroundColor(DesignSystem.Colors.textSecondary)
                             }
@@ -77,12 +112,19 @@ struct SettingsView: View {
                                 .frame(maxWidth: .infinity, alignment: .leading)
                             
                             VStack(spacing: DesignSystem.Spacing.sm) {
-                                ModernSettingsRow(
-                                    title: "App Lock",
-                                    subtitle: "Face ID / Passcode",
-                                    icon: "lock.shield",
-                                    enabled: false
-                                )
+                                Button {
+                                    print("App lock button tapped")
+                                    authService.toggleAppLock()
+                                    loadUserProfile() // Refresh profile data
+                                } label: {
+                                    ModernSettingsRow(
+                                        title: "App Lock",
+                                        subtitle: userProfile?.isAppLockEnabled == true ? "Face ID / Passcode enabled" : "Protect your app with biometrics",
+                                        icon: "lock.shield",
+                                        enabled: true,
+                                        showChevron: false
+                                    )
+                                }
                                 
                                 ModernSettingsRow(
                                     title: "Change Passcode",
@@ -210,5 +252,16 @@ struct SettingsView: View {
         } message: {
             Text("This will permanently delete all your expenses and income. This action cannot be undone.")
         }
+        .sheet(isPresented: $showProfileEdit) {
+            ProfileEditView()
+        }
+        .onAppear {
+            loadUserProfile()
+        }
+    }
+    
+    private func loadUserProfile() {
+        let descriptor = FetchDescriptor<UserProfile>()
+        userProfile = try? modelContext.fetch(descriptor).first
     }
 }

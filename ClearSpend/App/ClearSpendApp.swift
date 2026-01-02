@@ -17,7 +17,8 @@ struct ClearSpendApp: App {
             Income.self,
             Expense.self,
             Category.self,
-            SubCategory.self
+            SubCategory.self,
+            UserProfile.self
         )
 
         let context = ModelContext(container)
@@ -28,8 +29,26 @@ struct ClearSpendApp: App {
 
     var body: some Scene {
         WindowGroup {
-            RootView()
+            AuthenticatedAppView()
+                .environment(\.modelContext, sharedModelContainer.mainContext)
         }
-        .modelContainer(sharedModelContainer)
+    }
+}
+
+struct AuthenticatedAppView: View {
+    @Environment(\.modelContext) private var modelContext
+    @StateObject private var authService = AuthenticationService.shared
+    
+    var body: some View {
+        Group {
+            if authService.isUnlocked {
+                RootView()
+            } else {
+                LockScreenView(authService: authService)
+            }
+        }
+        .onAppear {
+            authService.setup(with: modelContext)
+        }
     }
 }
