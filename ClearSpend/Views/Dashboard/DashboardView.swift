@@ -161,13 +161,21 @@ struct DashboardView: View {
 
     private func deleteExpense(_ expense: Expense) {
         withAnimation {
+            print("🔍 DEBUG: Attempting to delete expense - ID: \(expense.id), Amount: \(expense.amount)")
+            
             modelContext.delete(expense)
 
             if let ledger = viewModel.selectedLedger {
                 ledger.expenses.removeAll { $0.id == expense.id }
+                print("🔍 DEBUG: Removed from ledger. Ledger now has \(ledger.expenses.count) expenses")
             }
 
-            try? modelContext.save()
+            do {
+                try modelContext.save()
+                print("🔍 DEBUG: Successfully saved context after deletion")
+            } catch {
+                print("🔍 DEBUG: Failed to save context after deletion: \(error)")
+            }
         }
     }
 

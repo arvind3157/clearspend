@@ -18,7 +18,8 @@ struct ClearSpendApp: App {
             Expense.self,
             Category.self,
             SubCategory.self,
-            UserProfile.self
+            UserProfile.self,
+            AppSettings.self
         )
 
         let context = ModelContext(container)
