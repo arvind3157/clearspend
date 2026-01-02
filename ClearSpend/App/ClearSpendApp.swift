@@ -15,5 +15,12 @@ struct ClearSpendApp: App {
         WindowGroup {
             RootView()
         }
+        .modelContainer(for: [
+            MonthLedger.self,
+            Income.self,
+            Expense.self,
+            Category.self,
+            SubCategory.self
+        ])
     }
 }

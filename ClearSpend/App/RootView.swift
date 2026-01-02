@@ -6,8 +6,11 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct RootView: View {
+
+    @Environment(\.modelContext) private var modelContext
 
     var body: some View {
         TabView {
@@ -30,6 +33,9 @@ struct RootView: View {
                 .tabItem {
                     Label("Settings", systemImage: "gear")
                 }
+        }
+        .onAppear {
+            CategorySeeder.seedIfNeeded(context: modelContext)
         }
     }
 }
