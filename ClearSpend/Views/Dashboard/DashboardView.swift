@@ -130,7 +130,7 @@ struct DashboardView: View {
                 .padding(.horizontal, DesignSystem.Spacing.lg)
             }
             .background(DesignSystem.Colors.background)
-            .navigationTitle("ClearSpend")
+            .navigationTitle("Dashboard")
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
