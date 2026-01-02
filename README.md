@@ -60,32 +60,6 @@ Your data stays **on your device**.
 
 ---
 
-## 📁 Project Structure (High-Level)
-
-ClearSpend/
-├── App/
-│   └── ClearSpendApp.swift
-├── Models/
-│   ├── Expense.swift
-│   ├── Category.swift
-│   ├── SubCategory.swift
-│   └── MonthLedger.swift
-├── Views/
-│   ├── Dashboard/
-│   ├── Analytics/
-│   ├── AddExpense/
-│   └── Settings/
-├── ViewModels/
-├── Services/
-│   ├── CSVImportService.swift
-│   ├── CSVExportService.swift
-│   ├── AuthenticationService.swift
-│   └── OCRService.swift
-├── DesignSystem/
-└── Utilities/
-
----
-
 ## 🧾 CSV Import / Export
 
 ### Export
