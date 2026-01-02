@@ -60,24 +60,21 @@ struct DashboardView: View {
         VStack(spacing: DesignSystem.Spacing.md) {
             HStack(spacing: DesignSystem.Spacing.md) {
                 SummaryCard(
-                    title: "Income",
-                    amount: viewModel.totalIncome,
-                    color: DesignSystem.Colors.success
-                )
-
-                SummaryCard(
-                    title: "Spent",
+                    title: "This Month",
                     amount: viewModel.totalExpenses,
                     color: DesignSystem.Colors.danger
                 )
+
+                SummaryCard(
+                    title: "Avg. Daily",
+                    amount: viewModel.averageDailySpending,
+                    color: DesignSystem.Colors.info
+                )
             }
 
-            SummaryCard(
-                title: "Savings",
-                amount: viewModel.savings,
-                color: viewModel.savings >= 0
-                    ? DesignSystem.Colors.info
-                    : DesignSystem.Colors.warning
+            TopCategoriesCard(
+                categories: viewModel.topSpendingCategories,
+                color: DesignSystem.Colors.primary
             )
         }
     }

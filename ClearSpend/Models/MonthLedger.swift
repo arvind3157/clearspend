@@ -19,9 +19,6 @@ final class MonthLedger {
     var createdAt: Date
 
     @Relationship(deleteRule: .cascade)
-    var incomes: [Income] = []
-
-    @Relationship(deleteRule: .cascade)
     var expenses: [Expense] = []
 
     init(month: Int, year: Int) {

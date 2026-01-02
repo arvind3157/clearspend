@@ -12,6 +12,10 @@ struct SummaryCard: View {
     let title: String
     let amount: Double
     let color: Color
+    
+    private var formattedAmount: String {
+        return amount.formatted(.currency(code: Locale.current.currency?.identifier ?? "USD"))
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: DesignSystem.Spacing.sm) {
@@ -28,7 +32,7 @@ struct SummaryCard: View {
                     .foregroundColor(color.opacity(0.7))
             }
             
-            Text(amount, format: .currency(code: Locale.current.currency?.identifier ?? "USD"))
+            Text(formattedAmount)
                 .font(DesignSystem.Typography.headlineSmall)
                 .foregroundColor(DesignSystem.Colors.textPrimary)
                 .fontWeight(.semibold)
@@ -48,10 +52,10 @@ struct SummaryCard: View {
     
     private func iconForTitle(_ title: String) -> String {
         switch title.lowercased() {
-        case "income":
-            return "arrow.down.circle.fill"
-        case "spent", "expenses":
+        case "spent", "expenses", "this month":
             return "arrow.up.circle.fill"
+        case "avg. daily":
+            return "calendar.badge.clock"
         case "savings":
             return "piggy.bank.fill"
         default:

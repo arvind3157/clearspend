@@ -11,7 +11,6 @@ import SwiftUI
 struct RootView: View {
 
     @State private var showMenu = false
-    @State private var showAddIncome = false
     @State private var showAddExpense = false
     @State private var showScanBill = false
     private let fabBottomOffset: CGFloat = 72
@@ -51,9 +50,6 @@ struct RootView: View {
 
             // MARK: - FAB & Menu (FIXED)
             fabLayer
-        }
-        .sheet(isPresented: $showAddIncome) {
-            AddIncomeView()
         }
         .sheet(isPresented: $showAddExpense) {
             AddExpenseView()
@@ -133,15 +129,6 @@ struct RootView: View {
                 color: DesignSystem.Colors.danger
             ) {
                 showAddExpense = true
-                showMenu = false
-            }
-
-            fabMenuButton(
-                title: "Add Income",
-                icon: "arrow.down.circle.fill",
-                color: DesignSystem.Colors.success
-            ) {
-                showAddIncome = true
                 showMenu = false
             }
         }

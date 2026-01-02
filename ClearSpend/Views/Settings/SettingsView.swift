@@ -107,7 +107,7 @@ struct SettingsView: View {
                 }
                 Button("Cancel", role: .cancel) {}
             } message: {
-                Text("This will permanently delete all your expenses and income.")
+                Text("This will permanently delete all your expenses and categories.")
             }
 
             // MARK: - Import Result Alert ✅
@@ -201,7 +201,6 @@ struct SettingsView: View {
     private func resetAllData() {
         do {
             try modelContext.delete(model: MonthLedger.self)
-            try modelContext.delete(model: Income.self)
             try modelContext.delete(model: Expense.self)
             try modelContext.delete(model: Category.self)
             try modelContext.delete(model: SubCategory.self)

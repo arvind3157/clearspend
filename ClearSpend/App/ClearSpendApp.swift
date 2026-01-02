@@ -14,7 +14,6 @@ struct ClearSpendApp: App {
     var sharedModelContainer: ModelContainer = {
         let container = try! ModelContainer(
             for: MonthLedger.self,
-            Income.self,
             Expense.self,
             Category.self,
             SubCategory.self,
