@@ -12,6 +12,7 @@ enum ExpenseFilter: String, CaseIterable, Identifiable {
     case week = "Week"
     case month = "Month"
     case year = "Year"
+    case custom = "Custom"
 
     var id: String { rawValue }
 }

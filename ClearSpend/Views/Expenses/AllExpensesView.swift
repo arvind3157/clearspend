@@ -17,10 +17,21 @@ struct AllExpensesView: View {
 
     @State private var filter: ExpenseFilter = .month
 
+    // Custom range
+    @State private var fromDate: Date = Calendar.current.date(
+        from: DateComponents(
+            year: Calendar.current.component(.year, from: Date()),
+            month: Calendar.current.component(.month, from: Date()),
+            day: 1
+        )
+    ) ?? .now
+
+    @State private var toDate: Date = .now
+
     var body: some View {
         VStack(spacing: 0) {
 
-            filterControl
+            filterSection
 
             List {
                 if filteredExpenses.isEmpty {
@@ -43,19 +54,48 @@ struct AllExpensesView: View {
         .navigationTitle("All Expenses")
     }
 
-    // MARK: - Filter Control
+    // MARK: - Filter Section
 
-    private var filterControl: some View {
-        Picker("Filter", selection: $filter) {
-            ForEach(ExpenseFilter.allCases) { filter in
-                Text(filter.rawValue).tag(filter)
+    private var filterSection: some View {
+        VStack(spacing: 12) {
+
+            Picker("Filter", selection: $filter) {
+                ForEach(ExpenseFilter.allCases) { filter in
+                    Text(filter.rawValue).tag(filter)
+                }
+            }
+            .pickerStyle(.segmented)
+            .padding(.horizontal)
+            .padding(.top)
+
+            if filter == .custom {
+                customDateRange
             }
         }
-        .pickerStyle(.segmented)
-        .padding()
     }
 
-    // MARK: - Filtered Expenses
+    // MARK: - Custom Date Range UI
+
+    private var customDateRange: some View {
+        HStack(spacing: 12) {
+
+            DatePicker(
+                "From",
+                selection: $fromDate,
+                displayedComponents: .date
+            )
+
+            DatePicker(
+                "To",
+                selection: $toDate,
+                in: fromDate...,
+                displayedComponents: .date
+            )
+        }
+        .padding(.horizontal)
+    }
+
+    // MARK: - Filtered Expenses Logic
 
     private var filteredExpenses: [Expense] {
         let calendar = Calendar.current
@@ -64,6 +104,7 @@ struct AllExpensesView: View {
         return ledger.expenses
             .filter { expense in
                 switch filter {
+
                 case .week:
                     return calendar.isDate(
                         expense.date,
@@ -84,9 +125,26 @@ struct AllExpensesView: View {
                         equalTo: now,
                         toGranularity: .year
                     )
+
+                case .custom:
+                    return expense.date >= startOfDay(fromDate)
+                        && expense.date <= endOfDay(toDate)
                 }
             }
             .sorted { $0.date > $1.date }
+    }
+
+    // MARK: - Helpers
+
+    private func startOfDay(_ date: Date) -> Date {
+        Calendar.current.startOfDay(for: date)
+    }
+
+    private func endOfDay(_ date: Date) -> Date {
+        Calendar.current.date(
+            byAdding: DateComponents(day: 1, second: -1),
+            to: startOfDay(date)
+        ) ?? date
     }
 
     // MARK: - Empty State
