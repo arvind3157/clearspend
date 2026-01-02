@@ -11,70 +11,81 @@ struct ExpenseRow: View {
     let expense: Expense
     
     var body: some View {
-        HStack(spacing: DesignSystem.Spacing.md) {
-            // Category Icon
-            ZStack {
-                Circle()
-                    .fill(DesignSystem.Colors.surfaceVariant)
-                    .frame(width: 40, height: 40)
-                
-                Image(systemName: iconForCategory(expense.subCategory?.category?.name ?? ""))
-                    .font(DesignSystem.Typography.titleMedium)
-                    .foregroundColor(colorForCategory(expense.subCategory?.category?.name ?? ""))
-            }
-            
-            // Expense Details
-            VStack(alignment: .leading, spacing: DesignSystem.Spacing.xs) {
-                Text(expense.subCategory?.name ?? "Unknown")
-                    .font(DesignSystem.Typography.bodyMedium)
-                    .foregroundColor(DesignSystem.Colors.textPrimary)
-                    .fontWeight(.medium)
-                
-                HStack(spacing: DesignSystem.Spacing.sm) {
-                    Text(expense.date, style: .date)
-                        .font(DesignSystem.Typography.bodySmall)
-                        .foregroundColor(DesignSystem.Colors.textSecondary)
+        NavigationLink(destination: ExpenseDetailView(expense: expense)) {
+            HStack(spacing: DesignSystem.Spacing.md) {
+                // Category Icon with Bill Image Indicator
+                ZStack {
+                    Circle()
+                        .fill(DesignSystem.Colors.surfaceVariant)
+                        .frame(width: 40, height: 40)
                     
-                    if let note = expense.note, !note.isEmpty {
-                        Text("•")
-                            .font(DesignSystem.Typography.bodySmall)
-                            .foregroundColor(DesignSystem.Colors.textTertiary)
-                        
-                        Text(note)
-                            .font(DesignSystem.Typography.bodySmall)
-                            .foregroundColor(DesignSystem.Colors.textTertiary)
-                            .lineLimit(1)
+                    Image(systemName: iconForCategory(expense.subCategory?.category?.name ?? ""))
+                        .font(DesignSystem.Typography.titleMedium)
+                        .foregroundColor(colorForCategory(expense.subCategory?.category?.name ?? ""))
+                    
+                    // Bill Image Indicator
+                    if expense.billImage != nil {
+                        Circle()
+                            .fill(DesignSystem.Colors.info)
+                            .frame(width: 8, height: 8)
+                            .offset(x: 12, y: -12)
                     }
                 }
-            }
-            
-            Spacer()
-            
-            // Amount
-            VStack(alignment: .trailing, spacing: DesignSystem.Spacing.xs) {
-                Text(
-                    expense.amount,
-                    format: .currency(code: Locale.current.currency?.identifier ?? "USD")
-                )
-                .font(DesignSystem.Typography.bodyMedium)
-                .fontWeight(.semibold)
-                .foregroundColor(DesignSystem.Colors.danger)
                 
-                Text(expense.paymentMethod.capitalized)
-                    .font(DesignSystem.Typography.bodySmall)
-                    .foregroundColor(DesignSystem.Colors.textTertiary)
+                // Expense Details
+                VStack(alignment: .leading, spacing: DesignSystem.Spacing.xs) {
+                    Text(expense.subCategory?.name ?? "Unknown")
+                        .font(DesignSystem.Typography.bodyMedium)
+                        .foregroundColor(DesignSystem.Colors.textPrimary)
+                        .fontWeight(.medium)
+                    
+                    HStack(spacing: DesignSystem.Spacing.sm) {
+                        Text(expense.date, style: .date)
+                            .font(DesignSystem.Typography.bodySmall)
+                            .foregroundColor(DesignSystem.Colors.textSecondary)
+                        
+                        if let note = expense.note, !note.isEmpty {
+                            Text("•")
+                                .font(DesignSystem.Typography.bodySmall)
+                                .foregroundColor(DesignSystem.Colors.textTertiary)
+                            
+                            Text(note)
+                                .font(DesignSystem.Typography.bodySmall)
+                                .foregroundColor(DesignSystem.Colors.textTertiary)
+                                .lineLimit(1)
+                        }
+                    }
+                }
+                
+                Spacer()
+                
+                // Amount
+                VStack(alignment: .trailing, spacing: DesignSystem.Spacing.xs) {
+                    Text(
+                        expense.amount,
+                        format: .currency(code: Locale.current.currency?.identifier ?? "USD")
+                    )
+                    .font(DesignSystem.Typography.bodyMedium)
+                    .fontWeight(.semibold)
+                    .foregroundColor(DesignSystem.Colors.danger)
+                    
+                    Text(expense.paymentMethod.capitalized)
+                        .font(DesignSystem.Typography.bodySmall)
+                        .foregroundColor(DesignSystem.Colors.textTertiary)
+                }
             }
+            .padding(DesignSystem.Spacing.md)
+            .background(
+                RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.medium)
+                    .fill(DesignSystem.Colors.cardBackground)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.medium)
+                            .stroke(DesignSystem.Colors.gray200, lineWidth: 1)
+                    )
+            )
+            .shadow(color: DesignSystem.Shadows.small.color, radius: DesignSystem.Shadows.small.radius, x: DesignSystem.Shadows.small.x, y: DesignSystem.Shadows.small.y)
         }
-        .padding(DesignSystem.Spacing.md)
-        .background(
-            RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.medium)
-                .fill(DesignSystem.Colors.cardBackground)
-                .overlay(
-                    RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.medium)
-                        .stroke(DesignSystem.Colors.gray200, lineWidth: 1)
-                )
-        )
-        .shadow(color: DesignSystem.Shadows.small.color, radius: DesignSystem.Shadows.small.radius, x: DesignSystem.Shadows.small.x, y: DesignSystem.Shadows.small.y)
+        .buttonStyle(PlainButtonStyle())
     }
     
     private func iconForCategory(_ categoryName: String) -> String {

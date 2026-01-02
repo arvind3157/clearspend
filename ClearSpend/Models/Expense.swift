@@ -16,6 +16,7 @@ final class Expense {
     var date: Date
     var note: String?
     var merchant: String?
+    var billImage: Data?
 
     /// Stored as raw string for SwiftData compatibility
     var paymentMethod: String

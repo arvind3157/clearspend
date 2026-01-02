@@ -25,6 +25,7 @@ struct ScanBillView: View {
     @State private var selectedCategory: Category?
     @State private var selectedSubCategory: SubCategory?
     @State private var suggestedCategoryName: String?
+    @State private var capturedImage: UIImage?
 
     var body: some View {
         NavigationStack {
@@ -96,6 +97,7 @@ struct ScanBillView: View {
 
     private func process(_ image: UIImage) {
         isProcessing = true
+        capturedImage = image
 
         OCRService.recognizeText(from: image) { result in
             DispatchQueue.main.async {
@@ -126,6 +128,12 @@ struct ScanBillView: View {
             subCategory: selectedSubCategory,
             merchant: merchant
         )
+
+        // Attach bill image if available
+        if let image = capturedImage,
+           let imageData = image.jpegData(compressionQuality: 0.7) {
+            expense.billImage = imageData
+        }
 
         ledger.expenses.append(expense)
         modelContext.insert(expense)

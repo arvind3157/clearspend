@@ -119,13 +119,6 @@ struct DashboardView: View {
                         RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.medium)
                             .fill(DesignSystem.Colors.surface)
                     )
-                    .contextMenu {
-                        Button(role: .destructive) {
-                            deleteExpense(expense)
-                        } label: {
-                            Label("Delete", systemImage: "trash")
-                        }
-                    }
             }
         }
     }
@@ -152,28 +145,6 @@ struct DashboardView: View {
             RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.medium)
                 .fill(DesignSystem.Colors.surfaceVariant)
         )
-    }
-
-    // MARK: - Delete
-
-    private func deleteExpense(_ expense: Expense) {
-        withAnimation {
-            print("🔍 DEBUG: Attempting to delete expense - ID: \(expense.id), Amount: \(expense.amount)")
-            
-            modelContext.delete(expense)
-
-            if let ledger = viewModel.selectedLedger {
-                ledger.expenses.removeAll { $0.id == expense.id }
-                print("🔍 DEBUG: Removed from ledger. Ledger now has \(ledger.expenses.count) expenses")
-            }
-
-            do {
-                try modelContext.save()
-                print("🔍 DEBUG: Successfully saved context after deletion")
-            } catch {
-                print("🔍 DEBUG: Failed to save context after deletion: \(error)")
-            }
-        }
     }
 
     // MARK: - Helpers
