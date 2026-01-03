@@ -84,7 +84,7 @@ struct LockScreenView: View {
                         HStack(spacing: DesignSystem.Spacing.md) {
                             Image(systemName: "faceid")
                                 .font(DesignSystem.Typography.titleMedium)
-                            
+                                
                             Text("Unlock")
                                 .font(DesignSystem.Typography.headlineSmall)
                                 .fontWeight(.semibold)

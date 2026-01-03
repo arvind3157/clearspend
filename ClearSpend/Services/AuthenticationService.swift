@@ -71,7 +71,7 @@ class AuthenticationService: ObservableObject {
     }
     
     func authenticate() async {
-        print("🔐 Starting biometric authentication")
+        print("🔐 Starting authentication")
         
         await MainActor.run {
             authenticationError = nil
@@ -85,12 +85,17 @@ class AuthenticationService: ObservableObject {
             print("👤 Face ID/Touch ID available, attempting biometric authentication")
             await performBiometricAuthentication(with: context)
         } else {
-            print("🔢 Biometrics not available, using passcode authentication")
+            print("🔢 Biometrics not available, using device passcode authentication")
             await authenticateWithPasscode()
         }
     }
     
     private func performBiometricAuthentication(with context: LAContext) async {
+        // Configure LAContext to suppress "Enter Password" fallback alert
+        context.interactionNotAllowed = false
+        
+        print("🔐 Starting biometric authentication with interactionNotAllowed=\(context.interactionNotAllowed)")
+        
         do {
             let success = try await context.evaluatePolicy(
                 .deviceOwnerAuthenticationWithBiometrics,
@@ -100,27 +105,28 @@ class AuthenticationService: ObservableObject {
             await handleAuthenticationResult(success, method: "Biometric")
         } catch {
             print("❌ Biometric authentication failed: \(error.localizedDescription)")
+            print("🔍 Error details: interactionNotAllowed=\(context.interactionNotAllowed)")
             
             await MainActor.run {
                 // Handle different types of biometric failures
-                if error.localizedDescription.contains("user fallback") || 
-                   error.localizedDescription.contains("canceled") ||
-                   error.localizedDescription.contains("not available") ||
-                   error.localizedDescription.contains("not enrolled") {
-                    // User chose to use passcode or biometrics not available/enrolled
-                    print("🔄 Falling back to passcode authentication")
-                    Task {
-                        await authenticateWithPasscode()
-                    }
-                } else if error.localizedDescription.contains("policy") {
-                    // Policy evaluation failed - try passcode
-                    print("🔄 Biometric policy failed, trying passcode")
+                if error.localizedDescription.contains("canceled") || error.localizedDescription.contains("cancelled") {
+                    // User cancelled - don't show error, just allow retry
+                    authenticationError = nil
+                    print("👤 User cancelled biometric authentication")
+                } else if error.localizedDescription.contains("not available") || error.localizedDescription.contains("not enrolled") {
+                    // Biometrics not available/enrolled - go directly to passcode
+                    authenticationError = nil
+                    print("🔢 Biometrics not available, using passcode")
                     Task {
                         await authenticateWithPasscode()
                     }
                 } else {
-                    // Other biometric errors
-                    authenticationError = "Biometric authentication failed. Please try again."
+                    // Any other biometric failure - automatically fallback to passcode
+                    authenticationError = nil
+                    print("🔄 Biometric failed, automatically falling back to passcode")
+                    Task {
+                        await authenticateWithPasscode()
+                    }
                 }
             }
         }
@@ -128,19 +134,38 @@ class AuthenticationService: ObservableObject {
     
     @MainActor
     private func authenticateWithPasscode() async {
-        print("🔢 Starting passcode authentication")
+        print("🔢 Starting device passcode authentication")
+        
         let context = LAContext()
+        var error: NSError?
+        
+        // Check if device passcode authentication is available
+        guard context.canEvaluatePolicy(.deviceOwnerAuthentication, error: &error) else {
+            print("❌ Device passcode authentication not available: \(error?.localizedDescription ?? "Unknown error")")
+            authenticationError = "Device passcode is not available. Please enable it in Settings."
+            return
+        }
         
         do {
+            print("🔐 Prompting for device passcode...")
             let success = try await context.evaluatePolicy(
                 .deviceOwnerAuthentication,
                 localizedReason: "Authenticate to access ClearSpend"
             )
             
-            await handleAuthenticationResult(success, method: "Passcode")
+            await handleAuthenticationResult(success, method: "Device Passcode")
         } catch {
-            print("❌ Passcode authentication failed: \(error.localizedDescription)")
-            authenticationError = "Authentication failed. Please try again."
+            print("❌ Device passcode authentication failed: \(error.localizedDescription)")
+            
+            // Handle different types of passcode failures
+            if error.localizedDescription.contains("canceled") || error.localizedDescription.contains("cancelled") {
+                // User cancelled - don't show error, just allow retry
+                authenticationError = nil
+                print("👤 User cancelled device passcode authentication")
+            } else {
+                // Other passcode errors
+                authenticationError = "Device passcode authentication failed. Please try again."
+            }
         }
     }
     
