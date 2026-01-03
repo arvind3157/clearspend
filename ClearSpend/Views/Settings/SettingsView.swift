@@ -36,7 +36,7 @@ struct SettingsView: View {
                 // MARK: - Security
                 Section("Security") {
                     Toggle("App Lock", isOn: Binding(
-                        get: { AuthenticationService.shared.isUnlocked == false },
+                        get: { AuthenticationService.shared.isAppLockEnabled },
                         set: { _ in
                             AuthenticationService.shared.toggleAppLock()
                         }

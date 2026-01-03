@@ -12,6 +12,7 @@ struct LockScreenView: View {
     @ObservedObject var authService: AuthenticationService
     @State private var isAnimating = false
     @State private var isAuthenticating = false
+    @State private var hasAttemptedAutoAuth = false
     
     var body: some View {
         ZStack {
@@ -63,6 +64,7 @@ struct LockScreenView: View {
                         
                         Button("Try Again") {
                             authService.resetAuthentication()
+                            performAuthentication()
                         }
                         .font(DesignSystem.Typography.bodyMedium)
                         .foregroundColor(.white)
@@ -114,11 +116,24 @@ struct LockScreenView: View {
         }
         .onAppear {
             startAnimation()
+            // Automatically attempt biometric authentication when lock screen appears
+            if !hasAttemptedAutoAuth {
+                hasAttemptedAutoAuth = true
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    performAuthentication()
+                }
+            }
         }
         .onChange(of: authService.authenticationError) { oldValue, newValue in
             if newValue != nil {
                 // Reset authentication state when error occurs
                 isAuthenticating = false
+            }
+        }
+        .onChange(of: authService.isShowingLockScreen) { oldValue, newValue in
+            // Reset auto-auth flag when lock screen is shown again
+            if newValue && !oldValue {
+                hasAttemptedAutoAuth = false
             }
         }
     }

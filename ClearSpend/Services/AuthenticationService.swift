@@ -17,6 +17,7 @@ class AuthenticationService: ObservableObject {
     @Published var isUnlocked = true
     @Published var isShowingLockScreen = false
     @Published var authenticationError: String?
+    @Published var isAppLockEnabled = false
     
     private var context: ModelContext?
     private var cancellables = Set<AnyCancellable>()
@@ -45,12 +46,14 @@ class AuthenticationService: ObservableObject {
             
             if let userProfile = userProfile, userProfile.isAppLockEnabled {
                 DispatchQueue.main.async {
+                    self.isAppLockEnabled = true
                     self.isUnlocked = false
                     self.isShowingLockScreen = true
                     print("🔒 App lock is enabled, showing lock screen")
                 }
             } else {
                 DispatchQueue.main.async {
+                    self.isAppLockEnabled = false
                     self.isUnlocked = true
                     self.isShowingLockScreen = false
                     print("🔓 App lock is disabled or no profile found")
@@ -188,10 +191,12 @@ class AuthenticationService: ObservableObject {
             
             // Update UI state immediately
             if isEnabled {
+                isAppLockEnabled = true
                 isUnlocked = false
                 isShowingLockScreen = true
                 print("🔒 App lock enabled - showing lock screen")
             } else {
+                isAppLockEnabled = false
                 isUnlocked = true
                 isShowingLockScreen = false
                 print("🔓 App lock disabled - app unlocked")
