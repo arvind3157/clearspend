@@ -401,6 +401,8 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Value: Scan bills to automatically add expenses";
+				INFOPLIST_KEY_NSFaceIDUsageDescription = "ClearSpend uses Face ID to securely authenticate and protect your financial data.";
+				INFOPLIST_KEY_NSBiometricUsageDescription = "ClearSpend uses biometric authentication to securely access your expense tracking data.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -434,6 +436,8 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Value: Scan bills to automatically add expenses";
+				INFOPLIST_KEY_NSFaceIDUsageDescription = "ClearSpend uses Face ID to securely authenticate and protect your financial data.";
+				INFOPLIST_KEY_NSBiometricUsageDescription = "ClearSpend uses biometric authentication to securely access your expense tracking data.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;

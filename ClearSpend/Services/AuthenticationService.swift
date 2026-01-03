@@ -16,73 +16,116 @@ class AuthenticationService: ObservableObject {
     
     @Published var isUnlocked = true
     @Published var isShowingLockScreen = false
+    @Published var authenticationError: String?
     
     private var context: ModelContext?
+    private var cancellables = Set<AnyCancellable>()
     
     private init() {}
     
     func setup(with modelContext: ModelContext) {
         self.context = modelContext
-        checkInitialLockStatus()
+        
+        // Ensure we're on main thread for UI updates
+        DispatchQueue.main.async {
+            self.checkInitialLockStatus()
+        }
     }
     
     private func checkInitialLockStatus() {
-        guard let context = context else { return }
+        guard let context = context else { 
+            print("❌ ModelContext not available")
+            return 
+        }
         
-        let descriptor = FetchDescriptor<UserProfile>()
-        let userProfile = try? context.fetch(descriptor).first
-        
-        if let userProfile = userProfile, userProfile.isAppLockEnabled {
-            isUnlocked = false
-            isShowingLockScreen = true
-            print("App lock is enabled, showing lock screen")
-        } else {
-            isUnlocked = true
-            isShowingLockScreen = false
-            print("App lock is disabled or no profile found")
+        do {
+            let descriptor = FetchDescriptor<UserProfile>()
+            let userProfiles = try context.fetch(descriptor)
+            let userProfile = userProfiles.first
+            
+            if let userProfile = userProfile, userProfile.isAppLockEnabled {
+                DispatchQueue.main.async {
+                    self.isUnlocked = false
+                    self.isShowingLockScreen = true
+                    print("🔒 App lock is enabled, showing lock screen")
+                }
+            } else {
+                DispatchQueue.main.async {
+                    self.isUnlocked = true
+                    self.isShowingLockScreen = false
+                    print("🔓 App lock is disabled or no profile found")
+                }
+            }
+        } catch {
+            DispatchQueue.main.async {
+                print("❌ Failed to check lock status: \(error)")
+                self.authenticationError = "Failed to check app lock status"
+                // Default to unlocked on error to prevent app from being stuck
+                self.isUnlocked = true
+                self.isShowingLockScreen = false
+            }
         }
     }
     
     func authenticate() async {
-        print("Starting biometric authentication")
+        print("🔐 Starting biometric authentication")
+        
+        await MainActor.run {
+            authenticationError = nil
+        }
         
         let context = LAContext()
         var error: NSError?
         
-        // Try Face ID first
+        // Check if biometrics are available
         if context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error) {
-            print("Face ID available, attempting biometric authentication")
-            do {
-                let success = try await context.evaluatePolicy(
-                    .deviceOwnerAuthenticationWithBiometrics,
-                    localizedReason: "Authenticate to access ClearSpend"
-                )
-                
-                print("Face ID authentication result: \(success)")
-                
-                if success {
-                    await MainActor.run {
-                        self.isUnlocked = true
-                        self.isShowingLockScreen = false
-                        print("✅ Face ID authentication successful! App unlocked.")
-                    }
-                }
-                
-                return
-            } catch {
-                print("Face ID authentication failed: \(error.localizedDescription)")
-                // Fall back to passcode
-                await authenticateWithPasscode()
-            }
+            print("👤 Face ID/Touch ID available, attempting biometric authentication")
+            await performBiometricAuthentication(with: context)
         } else {
-            print("Face ID not available, using passcode")
+            print("🔢 Biometrics not available, using passcode authentication")
             await authenticateWithPasscode()
+        }
+    }
+    
+    private func performBiometricAuthentication(with context: LAContext) async {
+        do {
+            let success = try await context.evaluatePolicy(
+                .deviceOwnerAuthenticationWithBiometrics,
+                localizedReason: "Authenticate to access ClearSpend"
+            )
+            
+            await handleAuthenticationResult(success, method: "Biometric")
+        } catch {
+            print("❌ Biometric authentication failed: \(error.localizedDescription)")
+            
+            await MainActor.run {
+                // Handle different types of biometric failures
+                if error.localizedDescription.contains("user fallback") || 
+                   error.localizedDescription.contains("canceled") ||
+                   error.localizedDescription.contains("not available") ||
+                   error.localizedDescription.contains("not enrolled") {
+                    // User chose to use passcode or biometrics not available/enrolled
+                    print("🔄 Falling back to passcode authentication")
+                    Task {
+                        await authenticateWithPasscode()
+                    }
+                } else if error.localizedDescription.contains("policy") {
+                    // Policy evaluation failed - try passcode
+                    print("🔄 Biometric policy failed, trying passcode")
+                    Task {
+                        await authenticateWithPasscode()
+                    }
+                } else {
+                    // Other biometric errors
+                    authenticationError = "Biometric authentication failed. Please try again."
+                }
+            }
         }
     }
     
     @MainActor
     private func authenticateWithPasscode() async {
-        print("Starting passcode authentication")
+        print("🔢 Starting passcode authentication")
         let context = LAContext()
         
         do {
@@ -91,46 +134,75 @@ class AuthenticationService: ObservableObject {
                 localizedReason: "Authenticate to access ClearSpend"
             )
             
-            print("Passcode authentication result: \(success)")
-            
-            if success {
-                self.isUnlocked = true
-                self.isShowingLockScreen = false
-                print("✅ Passcode authentication successful! App unlocked.")
-            }
+            await handleAuthenticationResult(success, method: "Passcode")
         } catch {
             print("❌ Passcode authentication failed: \(error.localizedDescription)")
+            authenticationError = "Authentication failed. Please try again."
+        }
+    }
+    
+    @MainActor
+    private func handleAuthenticationResult(_ success: Bool, method: String) {
+        print("🔐 \(method) authentication result: \(success)")
+        
+        if success {
+            isUnlocked = true
+            isShowingLockScreen = false
+            authenticationError = nil
+            print("✅ \(method) authentication successful! App unlocked.")
+        } else {
+            authenticationError = "\(method) authentication failed"
         }
     }
     
     func toggleAppLock() {
-        guard let context = context else { return }
-        
-        let descriptor = FetchDescriptor<UserProfile>()
-        var userProfile = try? context.fetch(descriptor).first
-        
-        if userProfile == nil { // Create new profile if none exists
-            let newProfile = UserProfile()
-            context.insert(newProfile)
-            userProfile = newProfile
+        guard let context = context else { 
+            print("❌ ModelContext not available for toggle")
+            return 
         }
         
-        let currentProfile = userProfile!
-        currentProfile.isAppLockEnabled = !currentProfile.isAppLockEnabled
-        
         do {
-            try context.save()
-            print("🔄 App lock toggled to: \(currentProfile.isAppLockEnabled)")
+            let descriptor = FetchDescriptor<UserProfile>()
+            var userProfile = try context.fetch(descriptor).first
             
-            if currentProfile.isAppLockEnabled {
+            if userProfile == nil {
+                // Create new profile if none exists
+                let newProfile = UserProfile()
+                context.insert(newProfile)
+                userProfile = newProfile
+                print("👤 Created new user profile")
+            }
+            
+            guard let currentProfile = userProfile else {
+                print("❌ Failed to create or retrieve user profile")
+                return
+            }
+            
+            currentProfile.isAppLockEnabled.toggle()
+            currentProfile.updatedAt = Date()
+            
+            try context.save()
+            
+            let isEnabled = currentProfile.isAppLockEnabled
+            print("🔄 App lock toggled to: \(isEnabled)")
+            
+            // Update UI state immediately
+            if isEnabled {
                 isUnlocked = false
                 isShowingLockScreen = true
+                print("🔒 App lock enabled - showing lock screen")
             } else {
                 isUnlocked = true
                 isShowingLockScreen = false
+                print("🔓 App lock disabled - app unlocked")
             }
         } catch {
-            print("Failed to save app lock setting: \(error)")
+            print("❌ Failed to toggle app lock: \(error)")
+            authenticationError = "Failed to update app lock setting"
         }
+    }
+    
+    func resetAuthentication() {
+        authenticationError = nil
     }
 }

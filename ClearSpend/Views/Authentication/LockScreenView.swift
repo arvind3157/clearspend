@@ -52,14 +52,32 @@ struct LockScreenView: View {
                 
                 Spacer()
                 
+                // Authentication error display
+                if let error = authService.authenticationError {
+                    VStack(spacing: DesignSystem.Spacing.sm) {
+                        Text(error)
+                            .font(DesignSystem.Typography.bodySmall)
+                            .foregroundColor(.white)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal)
+                        
+                        Button("Try Again") {
+                            authService.resetAuthentication()
+                        }
+                        .font(DesignSystem.Typography.bodyMedium)
+                        .foregroundColor(.white)
+                        .padding(.horizontal, DesignSystem.Spacing.lg)
+                        .padding(.vertical, DesignSystem.Spacing.sm)
+                        .background(.white.opacity(0.2))
+                        .cornerRadius(DesignSystem.CornerRadius.medium)
+                    }
+                    .transition(.opacity.combined(with: .move(edge: .bottom)))
+                }
+                
                 // Unlock button
                 if !isAuthenticating {
                     Button {
-                        isAuthenticating = true
-                        Task {
-                            await authService.authenticate()
-                            isAuthenticating = false
-                        }
+                        performAuthentication()
                     } label: {
                         HStack(spacing: DesignSystem.Spacing.md) {
                             Image(systemName: "faceid")
@@ -95,8 +113,33 @@ struct LockScreenView: View {
             .padding(DesignSystem.Spacing.xl)
         }
         .onAppear {
-            withAnimation(.easeInOut(duration: 1.0).repeatForever(autoreverses: true)) {
-                isAnimating = true
+            startAnimation()
+        }
+        .onChange(of: authService.authenticationError) { oldValue, newValue in
+            if newValue != nil {
+                // Reset authentication state when error occurs
+                isAuthenticating = false
+            }
+        }
+    }
+    
+    private func startAnimation() {
+        withAnimation(.easeInOut(duration: 1.0).repeatForever(autoreverses: true)) {
+            isAnimating = true
+        }
+    }
+    
+    private func performAuthentication() {
+        guard !isAuthenticating else { return }
+        
+        isAuthenticating = true
+        authService.resetAuthentication()
+        
+        Task {
+            await authService.authenticate()
+            // Reset authentication state when done
+            await MainActor.run {
+                isAuthenticating = false
             }
         }
     }
