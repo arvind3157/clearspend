@@ -19,13 +19,13 @@ struct ExpenseDetailView: View {
     @State private var showingFullImage = false
     @State private var showRemoveBillAlert = false
 
-    // Editable fields
-    @State private var amount: Double
+    // Editable fields (same as AddExpenseView)
+    @State private var amountText: String = ""
     @State private var date: Date
-    @State private var merchant: String
-    @State private var note: String
+    @State private var note: String = ""
     @State private var selectedCategory: Category?
     @State private var selectedSubCategory: SubCategory?
+    @State private var showCategoryPicker = false
 
     // Original expense
     let expense: Expense
@@ -35,12 +35,11 @@ struct ExpenseDetailView: View {
 
     init(expense: Expense) {
         self.expense = expense
-        self._amount = State(initialValue: expense.amount)
         self._date = State(initialValue: expense.date)
-        self._merchant = State(initialValue: expense.merchant ?? "")
         self._note = State(initialValue: expense.note ?? "")
         self._selectedCategory = State(initialValue: expense.subCategory?.category)
         self._selectedSubCategory = State(initialValue: expense.subCategory)
+        self._amountText = State(initialValue: String(expense.amount))
     }
 
     var body: some View {
@@ -48,45 +47,117 @@ struct ExpenseDetailView: View {
             ScrollView {
                 LazyVStack(spacing: DesignSystem.Spacing.xl) {
 
-                    // MARK: - Amount Section
-                    VStack(spacing: DesignSystem.Spacing.md) {
-                        Text("Amount")
-                            .font(DesignSystem.Typography.titleSmall)
-                            .foregroundColor(DesignSystem.Colors.textSecondary)
+                    if isEditing {
+                        // MARK: - Amount (AddExpenseView style)
+                        VStack(alignment: .leading, spacing: DesignSystem.Spacing.md) {
+                            Text("Amount")
+                                .font(DesignSystem.Typography.headlineSmall)
 
-                        if isEditing {
-                            TextField("Amount", value: $amount, format: .currency(code: Locale.current.currency?.identifier ?? "USD"))
-                                .font(DesignSystem.Typography.displaySmall)
-                                .fontWeight(.bold)
-                                .keyboardType(.decimalPad)
-                                .multilineTextAlignment(.center)
-                        } else {
+                            HStack {
+                                Text(Locale.current.currencySymbol ?? "$")
+                                    .font(DesignSystem.Typography.displayMedium)
+                                    .foregroundColor(DesignSystem.Colors.primary)
+
+                                TextField("0.00", text: $amountText)
+                                    .font(DesignSystem.Typography.displayMedium)
+                                    .keyboardType(.decimalPad)
+                            }
+                            .padding(DesignSystem.Spacing.lg)
+                            .background(
+                                RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.medium)
+                                    .fill(DesignSystem.Colors.surfaceVariant)
+                            )
+                        }
+
+                        // MARK: - Category + Subcategory (AddExpenseView style)
+                        VStack(alignment: .leading, spacing: DesignSystem.Spacing.md) {
+                            Text("Category")
+                                .font(DesignSystem.Typography.headlineSmall)
+
+                            Button {
+                                showCategoryPicker = true
+                            } label: {
+                                HStack {
+                                    Image(systemName: selectedCategory?.icon ?? "folder")
+
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text(
+                                            selectedSubCategory?.name ??
+                                            selectedCategory?.name ??
+                                            "Select Category"
+                                        )
+                                        .foregroundColor(
+                                            selectedCategory == nil
+                                            ? DesignSystem.Colors.textTertiary
+                                            : DesignSystem.Colors.textPrimary
+                                        )
+
+                                        if let category = selectedCategory {
+                                            Text(category.name)
+                                                .font(.caption)
+                                                .foregroundColor(DesignSystem.Colors.textSecondary)
+                                        }
+                                    }
+
+                                    Spacer()
+                                    Image(systemName: "chevron.down")
+                                        .foregroundColor(DesignSystem.Colors.textTertiary)
+                                }
+                                .padding(DesignSystem.Spacing.lg)
+                                .background(
+                                    RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.medium)
+                                        .fill(DesignSystem.Colors.surfaceVariant)
+                                )
+                            }
+                        }
+
+                        // MARK: - Details (AddExpenseView style)
+                        VStack(alignment: .leading, spacing: DesignSystem.Spacing.md) {
+                            Text("Details")
+                                .font(DesignSystem.Typography.headlineSmall)
+
+                            DatePicker(
+                                "Date",
+                                selection: $date,
+                                displayedComponents: .date
+                            )
+                            .datePickerStyle(.compact)
+
+                            TextField("Note (optional)", text: $note, axis: .vertical)
+                                .padding(DesignSystem.Spacing.md)
+                                .background(
+                                    RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.medium)
+                                        .fill(DesignSystem.Colors.surfaceVariant)
+                                )
+                                .lineLimit(2...5)
+                        }
+                    } else {
+                        // MARK: - Amount Section (Display mode)
+                        VStack(spacing: DesignSystem.Spacing.md) {
+                            Text("Amount")
+                                .font(DesignSystem.Typography.titleSmall)
+                                .foregroundColor(DesignSystem.Colors.textSecondary)
+
                             Text(amount, format: .currency(code: Locale.current.currency?.identifier ?? "USD"))
                                 .font(DesignSystem.Typography.displaySmall)
                                 .fontWeight(.bold)
                                 .foregroundColor(DesignSystem.Colors.textPrimary)
                         }
-                    }
-                    .padding()
-                    .background(
-                        RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.large)
-                            .fill(DesignSystem.Colors.cardBackground)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.large)
-                                    .stroke(DesignSystem.Colors.primary.opacity(0.2), lineWidth: 1)
-                            )
-                    )
+                        .padding()
+                        .background(
+                            RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.large)
+                                .fill(DesignSystem.Colors.cardBackground)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.large)
+                                        .stroke(DesignSystem.Colors.primary.opacity(0.2), lineWidth: 1)
+                                )
+                        )
 
-                    // MARK: - Bill Image Section
-                    if !isEditing {
+                        // MARK: - Bill Image Section
                         billImageView
-                    }
 
-                    // MARK: - Details Section
-                    VStack(spacing: DesignSystem.Spacing.lg) {
-                        if isEditing {
-                            editFieldsView
-                        } else {
+                        // MARK: - Details Section (Display mode)
+                        VStack(spacing: DesignSystem.Spacing.lg) {
                             detailsView
                         }
                     }
@@ -100,10 +171,6 @@ struct ExpenseDetailView: View {
             .navigationTitle("Expense Details")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Close") { dismiss() }
-                }
-
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Menu {
                         Button(isEditing ? "Save" : "Edit") {
@@ -113,7 +180,7 @@ struct ExpenseDetailView: View {
                                 isEditing = true
                             }
                         }
-                        .disabled(isEditing && amount <= 0)
+                        .disabled(isEditing && !canSave)
 
                         if !isEditing {
                             Button("Attach Bill") {
@@ -150,6 +217,18 @@ struct ExpenseDetailView: View {
                             print("Failed to save bill image: \(error)")
                         }
                     }
+                }
+            }
+            .sheet(isPresented: $showCategoryPicker) {
+                CategoryPickerView(
+                    categories: categories,
+                    selectedCategory: $selectedCategory,
+                    selectedSubCategory: $selectedSubCategory
+                )
+            }
+            .onChange(of: selectedCategory) { _, newCategory in
+                if newCategory?.id != selectedSubCategory?.category?.id {
+                    selectedSubCategory = nil
                 }
             }
             .fullScreenCover(isPresented: $showingFullImage) {
@@ -238,7 +317,7 @@ struct ExpenseDetailView: View {
     private var detailsView: some View {
         VStack(spacing: DesignSystem.Spacing.lg) {
             DetailRow(title: "Date", value: date.formatted(date: .abbreviated, time: .omitted))
-            DetailRow(title: "Merchant", value: merchant.isEmpty ? "Not specified" : merchant)
+            DetailRow(title: "Merchant", value: expense.merchant ?? "Not specified")
             DetailRow(title: "Category", value: selectedCategory?.name ?? "Not specified")
             DetailRow(title: "Sub Category", value: selectedSubCategory?.name ?? "Not specified")
             DetailRow(title: "Payment Method", value: expense.paymentMethod)
@@ -253,72 +332,19 @@ struct ExpenseDetailView: View {
         )
     }
 
-    // MARK: - Edit Fields View
+    // MARK: - Validation
 
-    private var editFieldsView: some View {
-        VStack(spacing: DesignSystem.Spacing.lg) {
-            VStack(alignment: .leading, spacing: DesignSystem.Spacing.sm) {
-                Text("Date")
-                    .font(DesignSystem.Typography.titleSmall)
-                    .foregroundColor(DesignSystem.Colors.textSecondary)
-                DatePicker("Date", selection: $date, displayedComponents: .date)
-                    .datePickerStyle(.graphical)
-            }
-
-            VStack(alignment: .leading, spacing: DesignSystem.Spacing.sm) {
-                Text("Merchant")
-                    .font(DesignSystem.Typography.titleSmall)
-                    .foregroundColor(DesignSystem.Colors.textSecondary)
-                TextField("Merchant name", text: $merchant)
-                    .textFieldStyle(.roundedBorder)
-            }
-
-            VStack(alignment: .leading, spacing: DesignSystem.Spacing.sm) {
-                Text("Category")
-                    .font(DesignSystem.Typography.titleSmall)
-                    .foregroundColor(DesignSystem.Colors.textSecondary)
-                
-                CategoryGridView(
-                    categories: categories,
-                    selectedCategory: $selectedCategory
-                )
-                .onChange(of: selectedCategory) {
-                    selectedSubCategory = nil
-                }
-
-                if let subs = selectedCategory?.subCategories {
-                    Picker("Sub Category", selection: $selectedSubCategory) {
-                        Text("Select").tag(SubCategory?.none)
-                        ForEach(subs) { sub in
-                            Text(sub.name).tag(SubCategory?.some(sub))
-                        }
-                    }
-                    .pickerStyle(.menu)
-                }
-            }
-
-            VStack(alignment: .leading, spacing: DesignSystem.Spacing.sm) {
-                Text("Note")
-                    .font(DesignSystem.Typography.titleSmall)
-                    .foregroundColor(DesignSystem.Colors.textSecondary)
-                TextField("Add a note...", text: $note, axis: .vertical)
-                    .textFieldStyle(.roundedBorder)
-                    .lineLimit(3...6)
-            }
-        }
-        .padding()
-        .background(
-            RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.large)
-                .fill(DesignSystem.Colors.cardBackground)
-        )
+    private var canSave: Bool {
+        (Double(amountText) ?? 0) > 0 && selectedSubCategory != nil
     }
 
     // MARK: - Actions
 
     private func saveChanges() {
+        guard let amount = Double(amountText) else { return }
+        
         expense.amount = amount
         expense.date = date
-        expense.merchant = merchant.isEmpty ? nil : merchant
         expense.note = note.isEmpty ? nil : note
         expense.subCategory = selectedSubCategory
 
@@ -331,12 +357,15 @@ struct ExpenseDetailView: View {
     }
 
     private func resetFields() {
-        amount = expense.amount
+        amountText = String(expense.amount)
         date = expense.date
-        merchant = expense.merchant ?? ""
         note = expense.note ?? ""
         selectedCategory = expense.subCategory?.category
         selectedSubCategory = expense.subCategory
+    }
+
+    private var amount: Double {
+        Double(amountText) ?? 0
     }
 
     private func deleteExpense() {
