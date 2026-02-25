@@ -14,75 +14,108 @@ struct DashboardView: View {
     @StateObject
     private var viewModel = DashboardViewModel()
 
+    @State private var showAddExpense = false
+
     var body: some View {
         NavigationStack {
             ScrollView {
-                LazyVStack(spacing: DesignSystem.Spacing.xl) {
+                LazyVStack(spacing: DesignSystem.Spacing.lg) {
 
-                    headerSection
-                    summaryCards
+                    greetingSection
+                    heroCard
+                    quickStats
+
+                    if !viewModel.dailySpending.isEmpty && viewModel.totalExpenses > 0 {
+                        SpendingSparkline(data: viewModel.dailySpending)
+                    }
+
+                    if !viewModel.categoryBreakdown.isEmpty {
+                        categorySection
+                    }
+
                     recentExpensesSection
 
                     Color.clear
-                        .frame(height: DesignSystem.Spacing.lg)
+                        .frame(height: DesignSystem.Spacing.xxl)
                 }
                 .padding(.horizontal, DesignSystem.Spacing.lg)
             }
             .background(DesignSystem.Colors.background)
-            .navigationTitle("Dashboard")
-            .navigationBarTitleDisplayMode(.large)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar(.hidden, for: .navigationBar)
         }
         .onAppear {
             viewModel.load(context: modelContext)
         }
+        .sheet(isPresented: $showAddExpense) {
+            AddExpenseView()
+        }
     }
 
-    // MARK: - Header
+    // MARK: - Greeting
 
-    private var headerSection: some View {
-        VStack(spacing: DesignSystem.Spacing.md) {
-            if let ledger = viewModel.selectedLedger {
-                Text(monthTitle(for: ledger))
-                    .font(DesignSystem.Typography.displaySmall)
-                    .fontWeight(.bold)
+    private var greetingSection: some View {
+        VStack(alignment: .leading, spacing: DesignSystem.Spacing.xs) {
+            Text(viewModel.greeting)
+                .font(DesignSystem.Typography.displaySmall)
+                .foregroundColor(DesignSystem.Colors.textPrimary)
 
-                Text("Financial Overview")
-                    .font(DesignSystem.Typography.bodyMedium)
-                    .foregroundColor(DesignSystem.Colors.textSecondary)
-            }
+            Text(viewModel.todayDateString)
+                .font(DesignSystem.Typography.bodyMedium)
+                .foregroundColor(DesignSystem.Colors.textSecondary)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.top, DesignSystem.Spacing.lg)
     }
 
-    // MARK: - Summary Cards
+    // MARK: - Hero Card
 
-    private var summaryCards: some View {
-        VStack(spacing: DesignSystem.Spacing.md) {
-            HStack(spacing: DesignSystem.Spacing.md) {
-                SummaryCard(
-                    title: "This Month",
-                    amount: viewModel.totalExpenses,
-                    color: DesignSystem.Colors.danger
-                )
+    private var heroCard: some View {
+        HeroSpendCard(
+            monthName: viewModel.monthName,
+            totalSpend: viewModel.totalExpenses,
+            transactionCount: viewModel.transactionCount
+        )
+    }
 
-                SummaryCard(
-                    title: "Avg. Daily",
-                    amount: viewModel.averageDailySpending,
-                    color: DesignSystem.Colors.info
-                )
+    // MARK: - Quick Stats
+
+    private var quickStats: some View {
+        QuickStatsRow(
+            dailyAverage: viewModel.averageDailySpending,
+            transactionCount: viewModel.transactionCount,
+            topCategory: viewModel.topCategoryName
+        )
+    }
+
+    // MARK: - Category Breakdown
+
+    private var categorySection: some View {
+        VStack(alignment: .leading, spacing: DesignSystem.Spacing.sm) {
+            Text("Spending by Category")
+                .font(DesignSystem.Typography.headlineSmall)
+                .foregroundColor(DesignSystem.Colors.textPrimary)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: DesignSystem.Spacing.sm) {
+                    ForEach(viewModel.categoryBreakdown, id: \.name) { cat in
+                        CategoryScrollCard(
+                            name: cat.name,
+                            icon: cat.icon,
+                            colorHex: cat.colorHex,
+                            amount: cat.amount,
+                            percentage: cat.percentage
+                        )
+                    }
+                }
             }
-
-            TopCategoriesCard(
-                categories: viewModel.topSpendingCategories,
-                color: DesignSystem.Colors.primary
-            )
         }
     }
 
     // MARK: - Recent Expenses
 
     private var recentExpensesSection: some View {
-        VStack(alignment: .leading, spacing: DesignSystem.Spacing.lg) {
+        VStack(alignment: .leading, spacing: DesignSystem.Spacing.md) {
 
             HStack {
                 Text("Recent Spends")
@@ -104,21 +137,11 @@ struct DashboardView: View {
             if viewModel.recentExpenses.isEmpty {
                 emptyState
             } else {
-                expensesList
-            }
-        }
-    }
-
-    // MARK: - Expenses List (NO List)
-
-    private var expensesList: some View {
-        VStack(spacing: DesignSystem.Spacing.sm) {
-            ForEach(viewModel.recentExpenses) { expense in
-                ExpenseRow(expense: expense)
-                    .background(
-                        RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.medium)
-                            .fill(DesignSystem.Colors.surface)
-                    )
+                VStack(spacing: DesignSystem.Spacing.sm) {
+                    ForEach(viewModel.recentExpenses) { expense in
+                        ExpenseRow(expense: expense)
+                    }
+                }
             }
         }
     }
@@ -126,32 +149,46 @@ struct DashboardView: View {
     // MARK: - Empty State
 
     private var emptyState: some View {
-        VStack(spacing: DesignSystem.Spacing.md) {
-            Image(systemName: "wallet.pass")
-                .font(.system(size: 48))
-                .foregroundColor(DesignSystem.Colors.textTertiary)
+        VStack(spacing: DesignSystem.Spacing.lg) {
 
-            Text("No expenses yet")
-                .font(DesignSystem.Typography.bodyMedium)
+            ZStack {
+                Circle()
+                    .fill(DesignSystem.Colors.primaryLight.opacity(0.12))
+                    .frame(width: 96, height: 96)
 
-            Text("Tap the + button to add your first expense")
-                .font(DesignSystem.Typography.bodySmall)
-                .foregroundColor(DesignSystem.Colors.textTertiary)
-                .multilineTextAlignment(.center)
+                Image(systemName: "banknote")
+                    .font(.system(size: 40))
+                    .foregroundColor(DesignSystem.Colors.primary)
+            }
+
+            VStack(spacing: DesignSystem.Spacing.sm) {
+                Text("Start Tracking Your Spending")
+                    .font(DesignSystem.Typography.headlineSmall)
+                    .foregroundColor(DesignSystem.Colors.textPrimary)
+
+                Text("Add your first expense to see insights, trends, and a breakdown of where your money goes.")
+                    .font(DesignSystem.Typography.bodyMedium)
+                    .foregroundColor(DesignSystem.Colors.textSecondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, DesignSystem.Spacing.md)
+            }
+
+            Button {
+                showAddExpense = true
+            } label: {
+                HStack(spacing: DesignSystem.Spacing.sm) {
+                    Image(systemName: "plus.circle.fill")
+                    Text("Add Your First Expense")
+                }
+                .primaryButtonStyle()
+            }
         }
         .frame(maxWidth: .infinity)
-        .padding(DesignSystem.Spacing.xl)
+        .padding(.vertical, DesignSystem.Spacing.xl)
         .background(
-            RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.medium)
-                .fill(DesignSystem.Colors.surfaceVariant)
+            RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.large)
+                .fill(DesignSystem.Colors.surface)
         )
-    }
-
-    // MARK: - Helpers
-
-    private func monthTitle(for ledger: MonthLedger) -> String {
-        let components = DateComponents(year: ledger.year, month: ledger.month)
-        let date = Calendar.current.date(from: components) ?? Date()
-        return date.formatted(.dateTime.month(.wide).year())
+        .shadow(color: DesignSystem.Shadows.small.color, radius: DesignSystem.Shadows.small.radius, x: DesignSystem.Shadows.small.x, y: DesignSystem.Shadows.small.y)
     }
 }

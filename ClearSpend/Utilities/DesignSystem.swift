@@ -39,8 +39,12 @@ struct DesignSystem {
         static let gray800 = Color(hex: "#1F2937")
         static let gray900 = Color(hex: "#111827")
         
+        // Gradient Colors
+        static let heroGradientStart = Color(hex: "#4F46E5") // Indigo
+        static let heroGradientEnd = Color(hex: "#7C3AED") // Deep Violet
+
         // Background Colors
-        static let background = Color(hex: "#FFFFFF")
+        static let background = Color(hex: "#F8F9FC")
         static let surface = Color(hex: "#FFFFFF")
         static let surfaceVariant = gray50
         static let cardBackground = Color(hex: "#FFFFFF")

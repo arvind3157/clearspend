@@ -9,46 +9,48 @@ import SwiftUI
 
 struct ExpenseRow: View {
     let expense: Expense
-    
+
+    private var categoryName: String {
+        expense.subCategory?.category?.name ?? ""
+    }
+
     var body: some View {
         NavigationLink(destination: ExpenseDetailView(expense: expense)) {
             HStack(spacing: DesignSystem.Spacing.md) {
-                // Category Icon with Bill Image Indicator
+
+                // Category Icon
                 ZStack {
-                    Circle()
-                        .fill(DesignSystem.Colors.surfaceVariant)
-                        .frame(width: 40, height: 40)
-                    
-                    Image(systemName: iconForCategory(expense.subCategory?.category?.name ?? ""))
-                        .font(DesignSystem.Typography.titleMedium)
-                        .foregroundColor(colorForCategory(expense.subCategory?.category?.name ?? ""))
-                    
-                    // Bill Image Indicator
+                    RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.small)
+                        .fill(colorForCategory(categoryName).opacity(0.12))
+                        .frame(width: 48, height: 48)
+
+                    Image(systemName: iconForCategory(categoryName))
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundColor(colorForCategory(categoryName))
+
                     if expense.billImage != nil {
                         Circle()
                             .fill(DesignSystem.Colors.info)
                             .frame(width: 8, height: 8)
-                            .offset(x: 12, y: -12)
+                            .offset(x: 16, y: -16)
                     }
                 }
-                
-                // Expense Details
-                VStack(alignment: .leading, spacing: DesignSystem.Spacing.xs) {
+
+                // Details
+                VStack(alignment: .leading, spacing: 3) {
                     Text(expense.subCategory?.name ?? "Unknown")
-                        .font(DesignSystem.Typography.bodyMedium)
+                        .font(DesignSystem.Typography.titleMedium)
                         .foregroundColor(DesignSystem.Colors.textPrimary)
-                        .fontWeight(.medium)
-                    
-                    HStack(spacing: DesignSystem.Spacing.sm) {
+                        .fontWeight(.semibold)
+
+                    HStack(spacing: DesignSystem.Spacing.xs) {
                         Text(expense.date, style: .date)
                             .font(DesignSystem.Typography.bodySmall)
-                            .foregroundColor(DesignSystem.Colors.textSecondary)
-                        
+                            .foregroundColor(DesignSystem.Colors.textTertiary)
+
                         if let note = expense.note, !note.isEmpty {
-                            Text("•")
-                                .font(DesignSystem.Typography.bodySmall)
+                            Text("·")
                                 .foregroundColor(DesignSystem.Colors.textTertiary)
-                            
                             Text(note)
                                 .font(DesignSystem.Typography.bodySmall)
                                 .foregroundColor(DesignSystem.Colors.textTertiary)
@@ -56,38 +58,28 @@ struct ExpenseRow: View {
                         }
                     }
                 }
-                
+
                 Spacer()
-                
+
                 // Amount
-                VStack(alignment: .trailing, spacing: DesignSystem.Spacing.xs) {
-                    Text(
-                        expense.amount,
-                        format: .currency(code: Locale.current.currency?.identifier ?? "USD")
-                    )
-                    .font(DesignSystem.Typography.bodyMedium)
-                    .fontWeight(.semibold)
-                    .foregroundColor(DesignSystem.Colors.danger)
-                    
-                    Text(expense.paymentMethod.capitalized)
-                        .font(DesignSystem.Typography.bodySmall)
-                        .foregroundColor(DesignSystem.Colors.textTertiary)
-                }
+                Text(
+                    expense.amount,
+                    format: .currency(code: Locale.current.currency?.identifier ?? "USD")
+                )
+                .font(DesignSystem.Typography.headlineSmall)
+                .fontWeight(.bold)
+                .foregroundColor(DesignSystem.Colors.textPrimary)
             }
             .padding(DesignSystem.Spacing.md)
             .background(
                 RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.medium)
-                    .fill(DesignSystem.Colors.cardBackground)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.medium)
-                            .stroke(DesignSystem.Colors.gray200, lineWidth: 1)
-                    )
+                    .fill(DesignSystem.Colors.surface)
             )
             .shadow(color: DesignSystem.Shadows.small.color, radius: DesignSystem.Shadows.small.radius, x: DesignSystem.Shadows.small.x, y: DesignSystem.Shadows.small.y)
         }
         .buttonStyle(PlainButtonStyle())
     }
-    
+
     private func iconForCategory(_ categoryName: String) -> String {
         switch categoryName.lowercased() {
         case "food", "restaurant", "dining":
@@ -110,7 +102,7 @@ struct ExpenseRow: View {
             return "wallet.pass"
         }
     }
-    
+
     private func colorForCategory(_ categoryName: String) -> Color {
         switch categoryName.lowercased() {
         case "food", "restaurant", "dining":
